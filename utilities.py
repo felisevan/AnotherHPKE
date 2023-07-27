@@ -1,6 +1,5 @@
 def concat(*args: bytes) -> bytes:
-    rt = b""
-    return rt.join(args)
+    return b"".join(args)
 
 
 def I2OSP(n: int, w: int) -> bytes:
