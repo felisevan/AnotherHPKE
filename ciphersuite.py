@@ -1,5 +1,5 @@
 from modes import *
-import KEM,KDF,AEAD
+import KEM,HKDF111,AEAD
 
 class ciphersuite:
     """
@@ -16,6 +16,6 @@ class ciphersuite:
     def initial(self, KEM_ID: KEM_IDS, KDF_ID: KEM_IDS, AEAD_ID: AEAD_IDS):
         # TODO: docstring
         self.__kem_id = KEM(KEM_ID)
-        self.__kdf_id = KDF(KDF_ID)
+        self.__kdf_id = HKDF111(KDF_ID)
         self.__aead_id  = AEAD(AEAD_ID)
         pass
