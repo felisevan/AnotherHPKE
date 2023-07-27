@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class AbstractAead(ABC):
     """
-    
+
     """
 
     @classmethod
