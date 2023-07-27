@@ -45,7 +45,7 @@ class AeadApis(AbstractAead):
     @classmethod
     @property
     @abstractmethod
-    def Nt(cls):
+    def _Nt(cls):
         return None
 
 
@@ -69,7 +69,7 @@ class AeadAESGCM(AeadApis):
     @classmethod
     @property
     @abstractmethod
-    def Nt(cls):
+    def _Nt(cls):
         return None
 
 
@@ -93,5 +93,5 @@ class AeadChaCha20Poly1305(AeadApis):
     @classmethod
     @property
     @abstractmethod
-    def Nt(cls):
+    def _Nt(cls):
         return None
