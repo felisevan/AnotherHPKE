@@ -25,7 +25,7 @@ class AbstractAead(ABC):
 
         
 
-        
+
 
 class AeadMethods(AbstractAead):
     """
@@ -100,7 +100,7 @@ class AeadAes128Gcm(AeadMethods):
 
 
 
-class AeadChaCha20Poly1305_1(AeadMethods):
+class AeadChaCha20Poly1305(AeadMethods):
     """
     
     """
@@ -109,3 +109,25 @@ class AeadChaCha20Poly1305_1(AeadMethods):
     NN = 12
     NT = 16
     algorithm = ChaCha20Poly1305
+
+
+
+class AeadExportOnly(AeadMethods):
+    """
+
+    """
+
+    def __init__(self, key, basenonce):
+        pass
+
+    @abstractmethod
+    def Seal(self, aad, pt):
+        raise NotImplementedError
+
+    @abstractmethod
+    def Open(self, aad, ct):
+        raise NotImplementedError
+
+    @abstractmethod
+    def __next_nonce(ctx):
+        raise NotImplementedError
