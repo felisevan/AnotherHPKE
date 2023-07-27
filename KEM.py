@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512
 from constants import KEM_IDS
+from utilities import concat
 
 
 class KEM(ABC):
@@ -46,13 +47,13 @@ class KEM(ABC):
         return private_key, public_key
 
     def serialize_public_key(self, pkX: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey) -> bytes:
-        return pkX.public_bytes(encoding=Encoding.X962, format=PublicFormat.UncompressedPoint)
+        return pkX.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
 
     def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey | X25519PublicKey | X448PublicKey:
         return EllipticCurvePublicKey.from_encoded_point(self._CURVE(), pkXm)
 
     def extract_and_expand(self, dh: bytes, kem_context: bytes) -> bytes:
-        suite_id = b"KEM" + struct.pack(">H", self._ID)
+        suite_id = concat(b"KEM", struct.pack(">H", self._ID))
         eae_prk = self._KDF.labeled_expand("", "eae_prk", dh, suite_id)
         shared_secret = self._KDF.labeled_expand(eae_prk, b"shared_secret", kem_context, self._Nsecret, suite_id)
         return shared_secret
@@ -63,7 +64,7 @@ class KEM(ABC):
         enc = self.serialize_public_key(pkE)
 
         pkRm = self.serialize_public_key(pkR)
-        kem_context = enc + pkRm
+        kem_context = concat(enc, pkRm)
 
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret, enc
@@ -73,7 +74,7 @@ class KEM(ABC):
         dh = skR.exchange(pkE)
 
         pkRm = self.serialize_public_key(skR.public_key())
-        kem_context = enc + pkRm
+        kem_context = concat(enc, pkRm)
 
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret
@@ -81,12 +82,12 @@ class KEM(ABC):
     def auth_encap(self, pkR: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey,
                    skS: EllipticCurvePrivateKey | X25519PrivateKey | X448PrivateKey):
         skE, pkE = self.generate_key_pair()
-        dh = skE.exchange(pkR) + skS.exchange(pkR)
+        dh = concat(skE.exchange(pkR), skS.exchange(pkR))
         enc = self.serialize_public_key(pkE)
 
         pkRm = self.serialize_public_key(pkR)
         pkSm = self.serialize_public_key(skS.public_key())
-        kem_context = enc + pkRm + pkSm
+        kem_context = concat(enc, pkRm, pkSm)
 
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret, enc
@@ -94,11 +95,11 @@ class KEM(ABC):
     def auth_decap(self, enc: bytes, skR: EllipticCurvePrivateKey | X25519PrivateKey | X448PrivateKey,
                    pkS: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey):
         pkE = self.deserialize_public_key(enc)
-        dh = skR.exchange(pkE) + skR.exchange(pkS)
+        dh = concat(skR.exchange(pkE), skR.exchange(pkS))
 
         pkRm = self.serialize_public_key(skR.public_key())
         pkSm = self.serialize_public_key(pkS)
-        kem_context = enc + pkRm + pkSm
+        kem_context = concat(enc, pkRm, pkSm)
 
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret
