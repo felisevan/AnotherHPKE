@@ -1,5 +1,8 @@
+import AEAD
+import HKDF111
+import KEM
 from modes import *
-import KEM,HKDF111,AEAD
+
 
 class ciphersuite:
     """
@@ -17,5 +20,5 @@ class ciphersuite:
         # TODO: docstring
         self.__kem_id = KEM(KEM_ID)
         self.__kdf_id = HKDF111(KDF_ID)
-        self.__aead_id  = AEAD(AEAD_ID)
+        self.__aead_id = AEAD(AEAD_ID)
         pass
