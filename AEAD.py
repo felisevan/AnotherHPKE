@@ -23,10 +23,12 @@ class AeadApis(AbstractAead):
     """
 
     @classmethod
+    @abstractmethod
     def Seal(cls, key, nonce, aad, pt):
         pass
 
     @classmethod
+    @abstractmethod
     def Open(cls, key, nonce, aad, ct):
         pass
 
