@@ -8,20 +8,26 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X
 from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512
+from KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
 from constants import KEM_IDS
-from utilities import concat
+from utilities import concat, I2OSP, OS2IP
+
+
+class DeriveKeyPairError(Exception):
+    """
+    Key pair derivation failure
+    """
 
 
 class KEM(ABC):
     @property
     @abstractmethod
-    def _ID(self) -> KEM_IDS:
+    def id(self) -> KEM_IDS:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
+    def _KDF(self) -> AbstractHkdf:
         raise NotImplementedError
 
     @property
@@ -31,31 +37,45 @@ class KEM(ABC):
 
     @property
     @abstractmethod
-    def _CURVE(self) -> Type[EllipticCurve | X25519PrivateKey | X448PrivateKey]:
+    def _Nsk(self):
         raise NotImplementedError
 
-    def generate_key_pair(self) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | tuple[
-        X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
-        private_key = generate_private_key(self._CURVE())
-        public_key = private_key.public_key()
-        return private_key, public_key
+    @property
+    def _suite_id(self) -> bytes:
+        return concat(b"KEM", I2OSP(self.id, 2))
 
-    def derive_key_pair(self, ikm) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | tuple[
-        X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
-        private_key = derive_private_key(ikm, self._CURVE())
-        public_key = private_key.public_key()
-        return private_key, public_key
+    @abstractmethod
+    def generate_key_pair(self) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | \
+                                   tuple[X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
+        raise NotImplementedError
 
+    @abstractmethod
+    def derive_key_pair(self, ikm: bytes) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | \
+                                      tuple[X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
+        raise NotImplementedError
+
+    @abstractmethod
     def serialize_public_key(self, pkX: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey) -> bytes:
-        return pkX.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+        raise NotImplementedError
 
+    @abstractmethod
     def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey | X25519PublicKey | X448PublicKey:
-        return EllipticCurvePublicKey.from_encoded_point(self._CURVE(), pkXm)
+        raise NotImplementedError
 
     def extract_and_expand(self, dh: bytes, kem_context: bytes) -> bytes:
-        suite_id = concat(b"KEM", struct.pack(">H", self._ID))
-        eae_prk = self._KDF.labeled_expand("", "eae_prk", dh, suite_id)
-        shared_secret = self._KDF.labeled_expand(eae_prk, b"shared_secret", kem_context, self._Nsecret, suite_id)
+        eae_prk = self._KDF.labeled_extract(
+            salt=b"",
+            label=b"eae_prk",
+            ikm=dh,
+            suite_id=self._suite_id
+        )
+        shared_secret = self._KDF.labeled_expand(
+            prk=eae_prk,
+            label=b"shared_secret",
+            info=kem_context,
+            L=self._Nsecret,
+            suite_id=self._suite_id
+        )
         return shared_secret
 
     def encap(self, pkR: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey):
@@ -105,79 +125,197 @@ class KEM(ABC):
         return shared_secret
 
 
-class DhKemP256HkdfSha256(KEM):
-    @property
-    def _ID(self) -> KEM_IDS:
-        return KEM_IDS.DHKEM_P_256_HKDF_SHA256
+class EcKem(KEM):
 
     @property
-    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
-        return HkdfSHA256
+    @abstractmethod
+    def _curve(self) -> Type[EllipticCurve]:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def _order(self):
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def _bitmask(self):
+        raise NotImplementedError
+
+    def generate_key_pair(self) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]:
+        private_key = generate_private_key(self._curve())
+        public_key = private_key.public_key()
+        return private_key, public_key
+
+    def derive_key_pair(self, ikm: bytes) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]:
+        dkp_prk = self._KDF.labeled_extract(
+            salt=b"",
+            label=b"dkp_prk",
+            ikm=ikm,
+            suite_id=self._suite_id
+        )
+        sk = 0
+        counter = 0
+        while sk == 0 or sk >= self._order:
+            if counter > 255:
+                raise DeriveKeyPairError
+            _bytes = bytearray(self._KDF.labeled_expand(
+                prk=dkp_prk,
+                info=b"candidate",
+                label=I2OSP(counter, 1),
+                L=self._Nsk,
+                suite_id=self._suite_id
+            ))
+            _bytes[0] = _bytes[0] & self._bitmask
+            sk = OS2IP(bytes(_bytes))
+            counter = counter + 1
+        sk = derive_private_key(sk, self._curve())
+        return sk, sk.public_key()
+
+    def serialize_public_key(self, pkX: EllipticCurvePublicKey) -> bytes:
+        return pkX.public_bytes(
+            encoding=Encoding.X962,
+            format=PublicFormat.UncompressedPoint
+        )
+
+    def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey:
+        return EllipticCurvePublicKey.from_encoded_point(
+            curve=self._curve(),
+            data=pkXm
+        )
+
+
+class DhKemP256HkdfSha256(EcKem):
+
+    @property
+    def _curve(self) -> Type[EllipticCurve]:
+        return SECP256R1
+
+    @property
+    def _order(self):
+        return 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+
+    @property
+    def _bitmask(self):
+        return 0xff
+
+    @property
+    def id(self) -> KEM_IDS:
+        return  KEM_IDS.DHKEM_P_256_HKDF_SHA256
+
+    @property
+    def _KDF(self) -> AbstractHkdf:
+        return HkdfSHA256()
 
     @property
     def _Nsecret(self) -> int:
         return 32
 
     @property
-    def _CURVE(self) -> Type[SECP256R1]:
-        return SECP256R1
+    def _Nsk(self):
+        return 32
 
 
-class DhKemP384HkdfSha384(KEM):
+class DhKemP384HkdfSha384(EcKem):
+
     @property
-    def _ID(self) -> KEM_IDS:
+    def _curve(self) -> Type[EllipticCurve]:
+        return SECP384R1
+
+    @property
+    def _order(self):
+        return 0xffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973
+
+    @property
+    def _bitmask(self):
+        return 0xff
+
+    @property
+    def id(self) -> KEM_IDS:
         return KEM_IDS.DHKEM_P_384_HKDF_SHA384
 
     @property
-    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
-        return HkdfSHA384
+    def _KDF(self) -> AbstractHkdf:
+        return HkdfSHA384()
 
     @property
     def _Nsecret(self) -> int:
         return 48
 
     @property
-    def _CURVE(self) -> Type[SECP384R1]:
-        return SECP384R1
+    def _Nsk(self):
+        return 48
 
 
-class DhKemP521HkdfSha512(KEM):
+class DhKemP521HkdfSha512(EcKem):
+
     @property
-    def _ID(self) -> KEM_IDS:
+    def _curve(self) -> Type[EllipticCurve]:
+        return SECP521R1
+
+    @property
+    def _order(self):
+        return 0x01fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa51868783bf2f966b7fcc0148f709a5d03bb5c9b8899c47aebb6fb71e91386409
+
+    @property
+    def _bitmask(self):
+        return 0x01
+
+    @property
+    def id(self) -> KEM_IDS:
         return KEM_IDS.DHKEM_P_521_HKDF_SHA512
 
     @property
-    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
-        return HkdfSHA512
+    def _KDF(self) -> AbstractHkdf:
+        return HkdfSHA512()
 
     @property
     def _Nsecret(self) -> int:
         return 64
 
     @property
-    def _CURVE(self) -> Type[SECP521R1]:
-        return SECP521R1
+    def _Nsk(self):
+        return 66
 
 
-class XECKem(KEM):
+class XEcKem(KEM):
+
+    @property
+    @abstractmethod
+    def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
+        raise NotImplementedError
+
     def generate_key_pair(self) -> tuple[X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
-        private_key = self._CURVE.generate()
+        private_key = self._curve.generate()
         public_key = private_key.public_key()
         return private_key, public_key
 
-    def derive_key_pair(self, ikm: int) -> tuple[X25519PrivateKey, X25519PublicKey] | tuple[
+    def derive_key_pair(self, ikm: bytes) -> tuple[X25519PrivateKey, X25519PublicKey] | tuple[
         X448PrivateKey, X448PublicKey]:
-        private_key = self._CURVE.from_private_bytes(ikm.to_bytes(32, 'big'))
-        public_key = private_key.public_key()
-        return private_key, public_key
+
+        dkp_prk = self._KDF.labeled_extract(
+            salt=b"",
+            label=b"dkp_prk",
+            ikm=ikm,
+            suite_id=self._suite_id
+        )
+        sk = self._KDF.labeled_expand(
+            prk=dkp_prk,
+            label=b"sk",
+            info=b"",
+            L=self._Nsk,
+            suite_id=self._suite_id
+        )
+        sk =  self._curve.from_private_bytes(sk)
+        return sk, sk.public_key()
 
     def serialize_public_key(self, pkX: X25519PublicKey | X448PublicKey) -> bytes:
         return pkX.public_bytes_raw()
 
     def deserialize_public_key(self, pkXm: bytes) -> X25519PublicKey | X448PublicKey:
-        if self._CURVE is X25519PrivateKey:
+        if self._curve is X25519PrivateKey:
             public_curve = X25519PublicKey
-        elif self._CURVE is X448PrivateKey:
+        elif self._curve is X448PrivateKey:
             public_curve = X448PublicKey
         else:
             raise NotImplementedError
@@ -185,37 +323,45 @@ class XECKem(KEM):
         return public_curve.from_public_bytes(pkXm)
 
 
-class DhKemX25519HkdfSha256(XECKem):
+class DhKemX25519HkdfSha256(XEcKem):
     @property
-    def _ID(self) -> KEM_IDS:
+    def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
+        return X25519PrivateKey
+
+    @property
+    def id(self) -> KEM_IDS:
         return KEM_IDS.DHKEM_X25519_HKDF_SHA256
 
     @property
-    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
-        return HkdfSHA256
+    def _KDF(self) -> AbstractHkdf:
+        return HkdfSHA256()
 
     @property
     def _Nsecret(self) -> int:
         return 32
 
     @property
-    def _CURVE(self) -> Type[X448PrivateKey]:
+    def _Nsk(self):
+        return 32
+
+
+class DhKemX448HkdfSha512(XEcKem):
+    @property
+    def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
         return X448PrivateKey
 
-
-class DhKemX448HkdfSha512(XECKem):
     @property
-    def _ID(self) -> KEM_IDS:
+    def id(self) -> KEM_IDS:
         return KEM_IDS.DHKEM_X448_HKDF_SHA512
 
     @property
-    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
-        return HkdfSHA512
+    def _KDF(self) -> AbstractHkdf:
+        return HkdfSHA512()
 
     @property
     def _Nsecret(self) -> int:
         return 64
 
     @property
-    def _CURVE(self) -> Type[X448PrivateKey]:
-        return X448PrivateKey
+    def _Nsk(self):
+        return 56
