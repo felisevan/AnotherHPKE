@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448P
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512
-from modes import KEM_IDS
+from constants import KEM_IDS
 
 
 class KEM(ABC):
