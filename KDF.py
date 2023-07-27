@@ -72,8 +72,8 @@ class HkdfApis(AbstractHkdf):
     @classmethod
     def extract(cls, salt: bytes, ikm: bytes, info: bytes = b"") -> bytes:
         hkdf = HKDF(
-            algorithm=cls.__hash,
-            length=cls.__Nh,
+            algorithm=cls._hash,
+            length=cls._Nh,
             salt=salt,
             info=info,
         )
@@ -83,7 +83,7 @@ class HkdfApis(AbstractHkdf):
     @classmethod
     def expand(cls, prk: bytes, L: int, info: bytes = b"") -> bytes:
         hkdf = HKDFExpand(
-            algorithm=cls.__hash,
+            algorithm=cls._hash,
             length=L,
             info=info,
         )
@@ -93,24 +93,23 @@ class HkdfApis(AbstractHkdf):
     @classmethod
     def labeled_extract(cls, salt: bytes, ikm: bytes, label: bytes, suite_id: bytes) -> bytes:
         labeled_ikm = concat(b"HPKE-v1", suite_id, label, ikm)
-        return cls.extract(salt, labeled_ikm, bytes=b"")
+        return cls.extract(salt, labeled_ikm, b"")
 
     @classmethod
     def labeled_expand(cls, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes) -> bytes:
         if L == 0:
             return b""
-
         labeled_info = concat(I2OSP(L, 2), b"HPKE-v1", suite_id, label, info)
         return cls.expand(prk, L, labeled_info)
 
 
-class Hkdf_SHA256(HkdfApis):
+class HkdfSHA256(HkdfApis):
     """
 
     """
 
-    @property
     @classmethod
+    @property
     def _hash(cls):
         return hashes.SHA256()
 
@@ -120,13 +119,12 @@ class Hkdf_SHA256(HkdfApis):
         return 32
 
 
-class Hkdf_SHA384(AbstractHkdf):
+class HkdfSHA384(HkdfApis):
     """
     
     """
-
-    @property
     @classmethod
+    @property
     def _hash(cls):
         return hashes.SHA384()
 
@@ -136,13 +134,13 @@ class Hkdf_SHA384(AbstractHkdf):
         return 48
 
 
-class Hkdf_SHA512(AbstractHkdf):
+class HkdfSHA512(HkdfApis):
     """
     
     """
 
-    @property
     @classmethod
+    @property
     def _hash(cls):
         return hashes.SHA512()
 

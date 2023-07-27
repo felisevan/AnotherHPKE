@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X
 from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from KDF import Hkdf_SHA256, Hkdf_SHA384, Hkdf_SHA512
+from KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512
 from modes import KEM_IDS
 
 
@@ -20,7 +20,7 @@ class KEM(ABC):
 
     @property
     @abstractmethod
-    def _KDF(self) -> Type[Hkdf_SHA256 | Hkdf_SHA384 | Hkdf_SHA512]:
+    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
         raise NotImplementedError
 
     @property
@@ -41,7 +41,7 @@ class KEM(ABC):
 
     def derive_key_pair(self, ikm) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | tuple[
         X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
-        private_key = derive_private_key(ikm, self._CURVE)
+        private_key = derive_private_key(ikm, self._CURVE())
         public_key = private_key.public_key()
         return private_key, public_key
 
@@ -49,7 +49,7 @@ class KEM(ABC):
         return pkX.public_bytes(encoding=Encoding.X962, format=PublicFormat.UncompressedPoint)
 
     def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey | X25519PublicKey | X448PublicKey:
-        return EllipticCurvePublicKey.from_encoded_point(self._CURVE, pkXm)
+        return EllipticCurvePublicKey.from_encoded_point(self._CURVE(), pkXm)
 
     def extract_and_expand(self, dh: bytes, kem_context: bytes) -> bytes:
         suite_id = b"KEM" + struct.pack(">H", self._ID)
@@ -110,8 +110,8 @@ class DhKemP256HkdfSha256(KEM):
         return KEM_IDS.DHKEM_P_256_HKDF_SHA256
 
     @property
-    def _KDF(self) -> Type[Hkdf_SHA256 | Hkdf_SHA384 | Hkdf_SHA512]:
-        return Hkdf_SHA256
+    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
+        return HkdfSHA256
 
     @property
     def _Nsecret(self) -> int:
@@ -128,8 +128,8 @@ class DhKemP384HkdfSha384(KEM):
         return KEM_IDS.DHKEM_P_384_HKDF_SHA384
 
     @property
-    def _KDF(self) -> Type[Hkdf_SHA256 | Hkdf_SHA384 | Hkdf_SHA512]:
-        return Hkdf_SHA384
+    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
+        return HkdfSHA384
 
     @property
     def _Nsecret(self) -> int:
@@ -146,8 +146,8 @@ class DhKemP521HkdfSha512(KEM):
         return KEM_IDS.DHKEM_P_521_HKDF_SHA512
 
     @property
-    def _KDF(self) -> Type[Hkdf_SHA256 | Hkdf_SHA384 | Hkdf_SHA512]:
-        return Hkdf_SHA512
+    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
+        return HkdfSHA512
 
     @property
     def _Nsecret(self) -> int:
@@ -190,8 +190,8 @@ class DhKemX25519HkdfSha256(XECKem):
         return KEM_IDS.DHKEM_X25519_HKDF_SHA256
 
     @property
-    def _KDF(self) -> Type[Hkdf_SHA256 | Hkdf_SHA384 | Hkdf_SHA512]:
-        return Hkdf_SHA256
+    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
+        return HkdfSHA256
 
     @property
     def _Nsecret(self) -> int:
@@ -208,8 +208,8 @@ class DhKemX448HkdfSha512(XECKem):
         return KEM_IDS.DHKEM_X448_HKDF_SHA512
 
     @property
-    def _KDF(self) -> Type[Hkdf_SHA256 | Hkdf_SHA384 | Hkdf_SHA512]:
-        return Hkdf_SHA512
+    def _KDF(self) -> Type[HkdfSHA256 | HkdfSHA384 | HkdfSHA512]:
+        return HkdfSHA512
 
     @property
     def _Nsecret(self) -> int:
