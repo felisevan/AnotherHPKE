@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Type, Callable
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 from constants import AEAD_IDS
+
 
 class AbstractAead(ABC):
     """
@@ -10,43 +12,43 @@ class AbstractAead(ABC):
 
     @property
     @abstractmethod
-    def id(self):
+    def id(self) -> AEAD_IDS:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def Nk(self):
+    def Nk(self) -> int:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def Nn(self):
+    def Nn(self) -> int:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def Nt(self):
+    def Nt(self) -> int:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def _algorithm(self):
+    def _algorithm(self) -> Callable:
         raise NotImplementedError
 
-    def seal(self, key, nonce, aad, pt):
+    def seal(self, key, nonce, aad, pt) -> bytes:
         """
         
         """
 
-        cipher = self._algorithm(key)
-        return cipher.encrypt(nonce=nonce, data=pt, aad=aad)
+        cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
+        return cipher.encrypt(nonce=nonce, data=pt, associated_data=aad)
 
-    def open(self, key, nonce, aad, ct):
+    def open(self, key, nonce, aad, ct) -> bytes:
         """
         
         """
-        cipher = self._algorithm(key)
-        return cipher.decrypt(nonce=nonce, data=ct, aad=aad)
+        cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
+        return cipher.decrypt(nonce=nonce, data=ct, associated_data=aad)
 
 
 class AeadAes256Gcm(AbstractAead):
@@ -58,16 +60,20 @@ class AeadAes256Gcm(AbstractAead):
     def id(self):
         return AEAD_IDS.AES_256_GCM
 
+    @property
     def Nk(self):
         return 32
 
+    @property
     def Nn(self):
         return 12
 
+    @property
     def Nt(self):
         return 16
 
-    def _algorithm(self):
+    @property
+    def _algorithm(self) -> Callable:
         return AESGCM
 
 
@@ -80,16 +86,20 @@ class AeadAes128Gcm(AbstractAead):
     def id(self):
         return AEAD_IDS.AES_128_GCM
 
+    @property
     def Nk(self):
         return 16
 
+    @property
     def Nn(self):
         return 12
 
+    @property
     def Nt(self):
         return 16
 
-    def _algorithm(self):
+    @property
+    def _algorithm(self) -> Callable:
         return AESGCM
 
 
@@ -102,16 +112,20 @@ class AeadChaCha20Poly1305(AbstractAead):
     def id(self):
         return AEAD_IDS.ChaCha20Poly1305
 
+    @property
     def Nk(self):
         return 32
 
+    @property
     def Nn(self):
         return 12
 
+    @property
     def Nt(self):
         return 16
 
-    def _algorithm(self):
+    @property
+    def _algorithm(self) -> Callable:
         return ChaCha20Poly1305
 
 
@@ -124,17 +138,22 @@ class AeadExportOnly(AbstractAead):
     def id(self):
         return AEAD_IDS.Export_only
 
+    @property
     def Nk(self):
         raise NotImplementedError
 
+    @property
     def Nn(self):
         raise NotImplementedError
 
+    @property
     def Nt(self):
         raise NotImplementedError
 
-    def seal(self, key, nonce, aad, pt):
+    @property
+    def seal(self, key, nonce, aad, pt) -> bytes:
         raise NotImplementedError
 
-    def open(self, key, nonce, aad, ct):
+    @property
+    def open(self, key, nonce, aad, ct) -> bytes:
         raise NotImplementedError
