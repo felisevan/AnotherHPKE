@@ -112,6 +112,8 @@ class AbstractKEM(ABC):
     def auth_encap(self, pkR: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey,
                    skS: EllipticCurvePrivateKey | X25519PrivateKey | X448PrivateKey):
         skE, pkE = self.generate_key_pair()
+        # skE = X25519PrivateKey.from_private_bytes(bytes.fromhex("14de82a5897b613616a00c39b87429df35bc2b426bcfd73febcb45e903490768"))
+        # pkE = skE.public_key()
         dh = concat(skE.exchange(pkR), skS.exchange(pkR))
         enc = self.serialize_public_key(pkE)
 

@@ -159,3 +159,20 @@ class AeadExportOnly(AbstractAead):
 
     def open(self, key, nonce, aad, ct) -> bytes:
         raise NotImplementedError
+
+
+class AeadFactory:
+    @classmethod
+    def new(cls, aead_id: AEAD_IDS) -> AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly:
+        match aead_id:
+            case AEAD_IDS.AES_128_GCM:
+                aead = AeadAes128Gcm()
+            case AEAD_IDS.AES_256_GCM:
+                aead = AeadAes256Gcm()
+            case AEAD_IDS.ChaCha20Poly1305:
+                aead = AeadChaCha20Poly1305()
+            case AEAD_IDS.Export_only:
+                aead = AeadExportOnly()
+            case _:
+                raise NotImplementedError
+        return aead
