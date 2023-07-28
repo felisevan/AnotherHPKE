@@ -42,8 +42,8 @@ class ContextFactory:
                 raise NotImplementedError
 
     def _verify_psk_inputs(self, mode, psk=b"", psk_id=b""):
-        got_psk = (self._default_psk != b"")
-        got_psk_id = (self._default_psk_id != b"")
+        got_psk = (psk != self._default_psk)
+        got_psk_id = (psk_id != self._default_psk_id)
         if got_psk != got_psk_id:
             raise Exception("Inconsistent PSK inputs")
 
@@ -53,8 +53,7 @@ class ContextFactory:
             raise Exception("Missing required PSK input")
 
     def _key_schedule(self, mode, shared_secret, info, psk, psk_id, role):
-        # self._verify_psk_inputs(mode, psk, psk_id)
-        # FIXME: this function is considered as broken.
+        self._verify_psk_inputs(mode, psk, psk_id)
 
         psk_id_hash = self.kdf.labeled_extract(b"", b"psk_id_hash", psk_id, suite_id=self.suite_id)
         info_hash = self.kdf.labeled_extract(b"", b"info_hash", info, suite_id=self.suite_id)
