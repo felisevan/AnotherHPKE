@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Type, Callable
+from typing import Callable
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 from constants import AEAD_IDS
@@ -151,9 +151,11 @@ class AeadExportOnly(AbstractAead):
         raise NotImplementedError
 
     @property
+    def _algorithm(self) -> Callable:
+        raise NotImplementedError
+
     def seal(self, key, nonce, aad, pt) -> bytes:
         raise NotImplementedError
 
-    @property
     def open(self, key, nonce, aad, ct) -> bytes:
         raise NotImplementedError
