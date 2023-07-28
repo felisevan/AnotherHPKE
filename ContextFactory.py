@@ -1,32 +1,65 @@
 from utilities import concat, I2OSP
-from constants import HPKE_MODES
-from KDF import AbstractHkdf
-from KEM import AbstractKEM
-from AEAD import AbstractAead
+from constants import MODE_IDS, KEM_IDS, KDF_IDS, AEAD_IDS
+from KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512
+from KEM import DhKemP256HkdfSha256, DhKemP384HkdfSha384, DhKemP521HkdfSha512, DhKemX25519HkdfSha256, \
+    DhKemX448HkdfSha512
+from AEAD import AeadAes128Gcm, AeadAes256Gcm, AeadChaCha20Poly1305, AeadExportOnly
 from Context import ContextExportOnly, ContextSender, ContextRecipient
 
 
 class ContextFactory:
-    def __init__(self, kem: AbstractKEM, kdf: AbstractHkdf, aead: AbstractAead):
+    def __init__(self, kem: KEM_IDS, kdf: KDF_IDS, aead: AEAD_IDS):
         self.suite_id = concat(
             b"HPKE",
-            I2OSP(kem.id, 2),
-            I2OSP(kdf.id, 2),
-            I2OSP(aead.id, 2)
+            I2OSP(kem, 2),
+            I2OSP(kdf, 2),
+            I2OSP(aead, 2)
         )
-        self.kem = kem
-        self.kdf = kdf
-        self.aead = aead
+        self._default_psk = b""
+        self._default_psk_id = b""
+        match kem:
+            case KEM_IDS.DHKEM_P_256_HKDF_SHA256:
+                self.kem = DhKemP256HkdfSha256()
+            case KEM_IDS.DHKEM_P_384_HKDF_SHA384:
+                self.kem = DhKemP384HkdfSha384()
+            case KEM_IDS.DHKEM_P_521_HKDF_SHA512:
+                self.kem = DhKemP521HkdfSha512()
+            case KEM_IDS.DHKEM_X25519_HKDF_SHA256:
+                self.kem = DhKemX25519HkdfSha256()
+            case KEM_IDS.DHKEM_X448_HKDF_SHA512:
+                self.kem = DhKemX448HkdfSha512()
+            case _:
+                raise NotImplementedError
+        match kdf:
+            case KDF_IDS.HKDF_SHA256:
+                self.kdf = HkdfSHA256()
+            case KDF_IDS.HKDF_SHA384:
+                self.kdf = HkdfSHA384()
+            case KDF_IDS.HKDF_SHA512:
+                self.kdf = HkdfSHA512()
+            case _:
+                raise NotImplementedError
+        match aead:
+            case AEAD_IDS.AES_128_GCM:
+                self.aead = AeadAes128Gcm()
+            case AEAD_IDS.AES_256_GCM:
+                self.aead = AeadAes256Gcm()
+            case AEAD_IDS.ChaCha20Poly1305:
+                self.aead = AeadChaCha20Poly1305()
+            case AEAD_IDS.Export_only:
+                self.aead = AeadExportOnly()
+            case _:
+                raise NotImplementedError
 
     def _verify_psk_inputs(self, mode, psk=b"", psk_id=b""):
-        got_psk = (psk != b"")
-        got_psk_id = (psk_id != b"")
+        got_psk = (self._default_psk != b"")
+        got_psk_id = (self._default_psk_id != b"")
         if got_psk != got_psk_id:
             raise Exception("Inconsistent PSK inputs")
 
-        if got_psk and (mode in [HPKE_MODES.MODE_BASE, HPKE_MODES.MODE_AUTH]):
+        if got_psk and (mode in [MODE_IDS.MODE_BASE, MODE_IDS.MODE_AUTH]):
             raise Exception("PSK input provided when not needed")
-        if (not got_psk) and (mode in [HPKE_MODES.MODE_PSK, HPKE_MODES.MODE_AUTH_PSK]):
+        if (not got_psk) and (mode in [MODE_IDS.MODE_PSK, MODE_IDS.MODE_AUTH_PSK]):
             raise Exception("Missing required PSK input")
 
     def _key_schedule(self, mode, shared_secret, info, psk, psk_id, role):
@@ -81,3 +114,42 @@ class ContextFactory:
 
     def key_schedule_exporter(self, mode, shared_secret, info, psk, psk_id):
         return self._key_schedule(mode, shared_secret, info, psk, psk_id, "exporter")
+
+    def SetupBaseS(self, pkR, info):
+        shared_secret, enc = self.kem.encap(pkR)
+        return enc, self.key_schedule_sender(MODE_IDS.MODE_BASE, shared_secret, info,
+                                             self._default_psk, self._default_psk_id)
+
+    def SetupBaseR(self, enc, skR, info):
+        shared_secret = self.kem.decap(enc, skR)
+        return self.key_schedule_recipient(MODE_IDS.MODE_BASE, shared_secret, info,
+                                           self._default_psk, self._default_psk_id)
+
+    def SetupPSKS(self, pkR, info, psk, psk_id):
+        shared_secret, enc = self.kem.encap(pkR)
+        return enc, self.key_schedule_sender(MODE_IDS.MODE_PSK, shared_secret, info,
+                                             psk, psk_id)
+
+    def SetupPSKR(self, enc, skR, info, psk, psk_id):
+        shared_secret = self.kem.decap(enc, skR)
+        return self.key_schedule_recipient(MODE_IDS.MODE_PSK, shared_secret, info, psk, psk_id)
+
+    def SetupAuthS(self, pkR, info, skS):
+        shared_secret, enc = self.kem.auth_encap(pkR, skS)
+        return enc, self.key_schedule_sender(MODE_IDS.MODE_AUTH, shared_secret, info,
+                                             self._default_psk, self._default_psk_id)
+
+    def SetupAuthR(self, enc, skR, info, pkS):
+        shared_secret = self.kem.auth_decap(enc, skR, pkS)
+        return self.key_schedule_recipient(MODE_IDS.MODE_AUTH, shared_secret, info,
+                                           self._default_psk, self._default_psk_id)
+
+    def SetupAuthPSKS(self, pkR, info, psk, psk_id, skS):
+        shared_secret, enc = self.kem.auth_encap(pkR, skS)
+        return enc, self.key_schedule_sender(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
+                                             psk, psk_id)
+
+    def SetupAuthPSKR(self, enc, skR, info, psk, psk_id, pkS):
+        shared_secret = self.kem.auth_decap(enc, skR, pkS)
+        return self.key_schedule_recipient(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
+                                           psk, psk_id)
