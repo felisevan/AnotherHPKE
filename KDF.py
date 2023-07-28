@@ -32,7 +32,7 @@ class AbstractHkdf(ABC):
 
     @property
     @abstractmethod
-    def _Nh(self) -> int:
+    def Nh(self) -> int:
         """
         The output size of the extract() methods in bytes.
         """
@@ -47,7 +47,7 @@ class AbstractHkdf(ABC):
 
         hkdf = HKDF(
             algorithm=self._hash,
-            length=self._Nh,
+            length=self.Nh,
             salt=salt,
             info=info,
         )
@@ -103,7 +103,7 @@ class HkdfSHA256(AbstractHkdf):
         return SHA256()
 
     @property
-    def _Nh(self) -> int:
+    def Nh(self) -> int:
         return 32
 
 
@@ -121,7 +121,7 @@ class HkdfSHA384(AbstractHkdf):
         return SHA384()
 
     @property
-    def _Nh(self) -> int:
+    def Nh(self) -> int:
         return 48
 
 
@@ -139,5 +139,5 @@ class HkdfSHA512(AbstractHkdf):
         return SHA512()
 
     @property
-    def _Nh(self) -> int:
+    def Nh(self) -> int:
         return 64
