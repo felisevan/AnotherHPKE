@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 
-class HPKE_MODES(IntEnum):
+class MODE_IDS(IntEnum):
     # TODO: docstring
     MODE_BASE = 0x00,
     MODE_PSK = 0x01,
