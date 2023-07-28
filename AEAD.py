@@ -1,9 +1,6 @@
 from abc import ABC, abstractmethod
-from utilities import xor_bytes
-from utilities import I2OSP
-from ciphersuite import base_nonce
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 
 
 class AbstractAead(ABC):
@@ -11,123 +8,112 @@ class AbstractAead(ABC):
 
     """
 
+    @property
     @abstractmethod
-    def Seal(self, aad, pt):
+    def Nk(self):
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def Open(self, aad, ct):
+    def Nn(self):
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def __next_nonce(ctx):
+    def Nt(self):
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def _algorithm(self):
+        raise NotImplementedError
+
+    def seal(self, key, nonce, aad, pt):
+        """
         
+        """
+
+        cipher = self._algorithm(key)
+        return cipher.encrypt(nonce=nonce, data=pt, aad=aad)
+
+    def open(self, key, nonce, aad, ct):
+        """
+        
+        """
+        cipher = self._algorithm(key)
+        return cipher.decrypt(nonce=nonce, data=ct, aad=aad)
 
 
-
-class AeadMethods(AbstractAead):
+class AeadAes256Gcm(AbstractAead):
     """
     
     """
 
-    NK = 0
-    NN = 0
-    NT = 0
-    algorithm = None
+    def Nk(self):
+        return 32
 
-    def __init__(self, key, basenonce):
-        """
-        
-        """
+    def Nn(self):
+        return 12
 
-        self._key = key
-        self._base__nonce = base_nonce      
-        self._seq = 0
-    
-    def _next_nonce(self):
-        """
-        
-        """
+    def Nt(self):
+        return 16
 
-        nonce = xor_bytes(self._base__nonce,I2OSP(self._seq))
-        self._seq += 1
-        return nonce
+    def _algorithm(self):
+        return AESGCM
 
 
-    def Seal(self, aad, pt):
-        """
-        
-        """
-
-        aesgcm = self.algorithm(key = self._key)
-        ct = aesgcm.encrypt(self._next_nonce(), data = pt, aad = aad)
-        return ct
-        
-
-    def Open(self, aad, ct):
-        """
-        
-        """
-        aesgcm = self.algorithm(key = self._key)
-        pt = aesgcm.decrypt(nonce=self._next_nonce(),data = ct, aad = aad)
-        return pt        
-
-
-
-class AeadAes256Gcm(AeadMethods):
+class AeadAes128Gcm(AbstractAead):
     """
     
     """
 
-    NK = 32
-    NN = 12
-    NT = 16
-    algorithm = AESGCM
+    def Nk(self):
+        return 16
+
+    def Nn(self):
+        return 12
+
+    def Nt(self):
+        return 16
+
+    def _algorithm(self):
+        return AESGCM
 
 
-
-class AeadAes128Gcm(AeadMethods):
+class AeadChaCha20Poly1305(AbstractAead):
     """
     
     """
 
-    NK = 16
-    NN = 12
-    NT = 16
-    algorithm = AESGCM
+    def Nk(self):
+        return 32
+
+    def Nn(self):
+        return 12
+
+    def Nt(self):
+        return 16
+
+    def _algorithm(self):
+        return ChaCha20Poly1305
 
 
-
-class AeadChaCha20Poly1305(AeadMethods):
-    """
-    
-    """
-
-    NK = 32
-    NN = 12
-    NT = 16
-    algorithm = ChaCha20Poly1305
-
-
-
-class AeadExportOnly(AeadMethods):
+class AeadExportOnly(AbstractAead):
     """
 
     """
 
-    def __init__(self, key, basenonce):
-        pass
-
-    @abstractmethod
-    def Seal(self, aad, pt):
+    def Nk(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def Open(self, aad, ct):
+    def Nn(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def __next_nonce(ctx):
+    def Nt(self):
+        raise NotImplementedError
+
+    def seal(self, key, nonce, aad, pt):
+        raise NotImplementedError
+
+    def open(self, key, nonce, aad, ct):
         raise NotImplementedError
