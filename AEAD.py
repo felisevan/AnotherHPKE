@@ -57,19 +57,19 @@ class AeadAes256Gcm(AbstractAead):
     """
 
     @property
-    def id(self):
+    def id(self) -> AEAD_IDS:
         return AEAD_IDS.AES_256_GCM
 
     @property
-    def Nk(self):
+    def Nk(self) -> int:
         return 32
 
     @property
-    def Nn(self):
+    def Nn(self) -> int:
         return 12
 
     @property
-    def Nt(self):
+    def Nt(self) -> int:
         return 16
 
     @property
@@ -83,19 +83,19 @@ class AeadAes128Gcm(AbstractAead):
     """
 
     @property
-    def id(self):
+    def id(self) -> AEAD_IDS:
         return AEAD_IDS.AES_128_GCM
 
     @property
-    def Nk(self):
+    def Nk(self) -> int:
         return 16
 
     @property
-    def Nn(self):
+    def Nn(self) -> int:
         return 12
 
     @property
-    def Nt(self):
+    def Nt(self) -> int:
         return 16
 
     @property
@@ -109,19 +109,19 @@ class AeadChaCha20Poly1305(AbstractAead):
     """
 
     @property
-    def id(self):
+    def id(self) -> AEAD_IDS:
         return AEAD_IDS.ChaCha20Poly1305
 
     @property
-    def Nk(self):
+    def Nk(self) -> int:
         return 32
 
     @property
-    def Nn(self):
+    def Nn(self) -> int:
         return 12
 
     @property
-    def Nt(self):
+    def Nt(self) -> int:
         return 16
 
     @property
@@ -135,19 +135,19 @@ class AeadExportOnly(AbstractAead):
     """
 
     @property
-    def id(self):
+    def id(self) -> AEAD_IDS:
         return AEAD_IDS.Export_only
 
     @property
-    def Nk(self):
+    def Nk(self) -> int:
         raise NotImplementedError
 
     @property
-    def Nn(self):
+    def Nn(self) -> int:
         raise NotImplementedError
 
     @property
-    def Nt(self):
+    def Nt(self) -> int:
         raise NotImplementedError
 
     @property
