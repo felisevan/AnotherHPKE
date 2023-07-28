@@ -36,7 +36,7 @@ class AbstractKEM(ABC):
 
     @property
     @abstractmethod
-    def _Nsk(self):
+    def _Nsk(self) -> int:
         raise NotImplementedError
 
     @property
@@ -134,12 +134,12 @@ class EcAbstractKem(AbstractKEM):
 
     @property
     @abstractmethod
-    def _order(self):
+    def _order(self) -> int:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def _bitmask(self):
+    def _bitmask(self) -> int:
         raise NotImplementedError
 
     def generate_key_pair(self) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]:
@@ -192,11 +192,11 @@ class DhKemP256HkdfSha256(EcAbstractKem):
         return SECP256R1
 
     @property
-    def _order(self):
+    def _order(self) -> int:
         return 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
 
     @property
-    def _bitmask(self):
+    def _bitmask(self) -> int:
         return 0xff
 
     @property
@@ -212,7 +212,7 @@ class DhKemP256HkdfSha256(EcAbstractKem):
         return 32
 
     @property
-    def _Nsk(self):
+    def _Nsk(self) -> int:
         return 32
 
 
@@ -223,11 +223,11 @@ class DhKemP384HkdfSha384(EcAbstractKem):
         return SECP384R1
 
     @property
-    def _order(self):
+    def _order(self) -> int:
         return 0xffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973
 
     @property
-    def _bitmask(self):
+    def _bitmask(self) -> int:
         return 0xff
 
     @property
@@ -243,7 +243,7 @@ class DhKemP384HkdfSha384(EcAbstractKem):
         return 48
 
     @property
-    def _Nsk(self):
+    def _Nsk(self) -> int:
         return 48
 
 
@@ -254,11 +254,11 @@ class DhKemP521HkdfSha512(EcAbstractKem):
         return SECP521R1
 
     @property
-    def _order(self):
+    def _order(self) -> int:
         return 0x01fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa51868783bf2f966b7fcc0148f709a5d03bb5c9b8899c47aebb6fb71e91386409
 
     @property
-    def _bitmask(self):
+    def _bitmask(self) -> int:
         return 0x01
 
     @property
@@ -274,7 +274,7 @@ class DhKemP521HkdfSha512(EcAbstractKem):
         return 64
 
     @property
-    def _Nsk(self):
+    def _Nsk(self) -> int:
         return 66
 
 
@@ -341,7 +341,7 @@ class DhKemX25519HkdfSha256(XEcAbstractKem):
         return 32
 
     @property
-    def _Nsk(self):
+    def _Nsk(self) -> int:
         return 32
 
 
@@ -363,5 +363,5 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
         return 64
 
     @property
-    def _Nsk(self):
+    def _Nsk(self) -> int:
         return 56
