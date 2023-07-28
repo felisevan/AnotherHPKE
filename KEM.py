@@ -18,7 +18,7 @@ class DeriveKeyPairError(Exception):
     """
 
 
-class KEM(ABC):
+class AbstractKEM(ABC):
     @property
     @abstractmethod
     def id(self) -> KEM_IDS:
@@ -125,7 +125,7 @@ class KEM(ABC):
         return shared_secret
 
 
-class EcKem(KEM):
+class EcAbstractKem(AbstractKEM):
 
     @property
     @abstractmethod
@@ -185,7 +185,7 @@ class EcKem(KEM):
         )
 
 
-class DhKemP256HkdfSha256(EcKem):
+class DhKemP256HkdfSha256(EcAbstractKem):
 
     @property
     def _curve(self) -> Type[EllipticCurve]:
@@ -216,7 +216,7 @@ class DhKemP256HkdfSha256(EcKem):
         return 32
 
 
-class DhKemP384HkdfSha384(EcKem):
+class DhKemP384HkdfSha384(EcAbstractKem):
 
     @property
     def _curve(self) -> Type[EllipticCurve]:
@@ -247,7 +247,7 @@ class DhKemP384HkdfSha384(EcKem):
         return 48
 
 
-class DhKemP521HkdfSha512(EcKem):
+class DhKemP521HkdfSha512(EcAbstractKem):
 
     @property
     def _curve(self) -> Type[EllipticCurve]:
@@ -278,7 +278,7 @@ class DhKemP521HkdfSha512(EcKem):
         return 66
 
 
-class XEcKem(KEM):
+class XEcAbstractKem(AbstractKEM):
 
     @property
     @abstractmethod
@@ -323,7 +323,7 @@ class XEcKem(KEM):
         return public_curve.from_public_bytes(pkXm)
 
 
-class DhKemX25519HkdfSha256(XEcKem):
+class DhKemX25519HkdfSha256(XEcAbstractKem):
     @property
     def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
         return X25519PrivateKey
@@ -345,7 +345,7 @@ class DhKemX25519HkdfSha256(XEcKem):
         return 32
 
 
-class DhKemX448HkdfSha512(XEcKem):
+class DhKemX448HkdfSha512(XEcAbstractKem):
     @property
     def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
         return X448PrivateKey
