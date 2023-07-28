@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256, SHA384, SHA512
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF, HKDFExpand
 
@@ -39,31 +40,50 @@ class AbstractHkdf(ABC):
 
         raise NotImplementedError
 
-    def _extract(self, salt: bytes, ikm: bytes, info: bytes = b"") -> bytes:
-        """
-        Extract a pseudorandom key of fixed length `Nh` bytes from input keying material `ikm`
-        and an optional byte string `salt`.
-        """
+    # def _extract(self, salt: bytes, ikm: bytes, info: bytes = b"") -> bytes:
+    #     """
+    #     Extract a pseudorandom key of fixed length `Nh` bytes from input keying material `ikm`
+    #     and an optional byte string `salt`.
+    #     """
+    #
+    #     hkdf = HKDF(
+    #         algorithm=self._hash,
+    #         length=self.Nh,
+    #         salt=salt,
+    #     )
+    #     return hkdf.derive(ikm)
+    #
+    # def _expand(self, prk: bytes, info: bytes, L: int) -> bytes:
+    #     """
+    #     Expand a pseudorandom key `prk` using optional string `info` into `L` bytes of output keying material.
+    #     """
+    #
+    #     hkdf = HKDFExpand(
+    #         algorithm=self._hash,
+    #         length=L,
+    #         info=info,
+    #     )
+    #     return hkdf.derive(prk)
 
-        hkdf = HKDF(
-            algorithm=self._hash,
-            length=self.Nh,
-            salt=salt,
-            info=info,
-        )
-        return hkdf.derive(ikm)
+    def _extract(self, salt: bytes, ikm: bytes) -> bytes:
+        ctx = hmac.HMAC(salt, self._hash)
+        ctx.update(ikm)
+        return ctx.finalize()
 
     def _expand(self, prk: bytes, info: bytes, L: int) -> bytes:
-        """
-        Expand a pseudorandom key `prk` using optional string `info` into `L` bytes of output keying material.
-        """
+        assert L <= 255 * self._hash.digest_size
 
-        hkdf = HKDFExpand(
-            algorithm=self._hash,
-            length=L,
-            info=info,
-        )
-        return hkdf.derive(prk)
+        t_n_minus_1 = b""
+        n = 1
+        data = b""
+
+        while len(data) < L:
+            ctx = hmac.HMAC(prk, self._hash)
+            ctx.update(t_n_minus_1 + info + n.to_bytes(1, byteorder="big"))
+            t_n_minus_1 = ctx.finalize()
+            data += t_n_minus_1
+            n += 1
+        return data[:L]
 
     def labeled_extract(self, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes) -> bytes:
         """

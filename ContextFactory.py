@@ -3,7 +3,7 @@ from constants import MODE_IDS, KEM_IDS, KDF_IDS, AEAD_IDS
 from KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512
 from KEM import DhKemP256HkdfSha256, DhKemP384HkdfSha384, DhKemP521HkdfSha512, DhKemX25519HkdfSha256, \
     DhKemX448HkdfSha512
-from AEAD import AeadAes128Gcm, AeadAes256Gcm, AeadChaCha20Poly1305, AeadExportOnly
+from AEAD import AeadFactory
 from Context import ContextExportOnly, ContextSender, ContextRecipient
 
 
@@ -17,6 +17,7 @@ class ContextFactory:
         )
         self._default_psk = b""
         self._default_psk_id = b""
+        self.aead = AeadFactory.new(aead)
         match kem:
             case KEM_IDS.DHKEM_P_256_HKDF_SHA256:
                 self.kem = DhKemP256HkdfSha256()
@@ -39,17 +40,6 @@ class ContextFactory:
                 self.kdf = HkdfSHA512()
             case _:
                 raise NotImplementedError
-        match aead:
-            case AEAD_IDS.AES_128_GCM:
-                self.aead = AeadAes128Gcm()
-            case AEAD_IDS.AES_256_GCM:
-                self.aead = AeadAes256Gcm()
-            case AEAD_IDS.ChaCha20Poly1305:
-                self.aead = AeadChaCha20Poly1305()
-            case AEAD_IDS.Export_only:
-                self.aead = AeadExportOnly()
-            case _:
-                raise NotImplementedError
 
     def _verify_psk_inputs(self, mode, psk=b"", psk_id=b""):
         got_psk = (self._default_psk != b"")
@@ -63,11 +53,12 @@ class ContextFactory:
             raise Exception("Missing required PSK input")
 
     def _key_schedule(self, mode, shared_secret, info, psk, psk_id, role):
-        self._verify_psk_inputs(mode, psk, psk_id)
+        # self._verify_psk_inputs(mode, psk, psk_id)
+        # FIXME: this function is considered as broken.
 
         psk_id_hash = self.kdf.labeled_extract(b"", b"psk_id_hash", psk_id, suite_id=self.suite_id)
         info_hash = self.kdf.labeled_extract(b"", b"info_hash", info, suite_id=self.suite_id)
-        key_schedule_context = concat(mode, psk_id_hash, info_hash)
+        key_schedule_context = concat(I2OSP(mode, 1), psk_id_hash, info_hash)
 
         secret = self.kdf.labeled_extract(shared_secret, b"secret", psk, suite_id=self.suite_id)
 
