@@ -14,7 +14,7 @@ class AbstractHkdf(ABC):
 
     @property
     @abstractmethod
-    def id(self):
+    def id(self) -> KDF_IDS:
         """
         The KDF id.
         """
@@ -32,7 +32,7 @@ class AbstractHkdf(ABC):
 
     @property
     @abstractmethod
-    def _Nh(self) -> any:
+    def _Nh(self) -> int:
         """
         The output size of the extract() methods in bytes.
         """
@@ -95,11 +95,11 @@ class HkdfSHA256(AbstractHkdf):
     """
 
     @property
-    def id(self):
+    def id(self) -> KDF_IDS:
         return KDF_IDS.HKDF_SHA256
 
     @property
-    def _hash(self):
+    def _hash(self) -> HashAlgorithm:
         return SHA256()
 
     @property
@@ -113,11 +113,11 @@ class HkdfSHA384(AbstractHkdf):
     """
 
     @property
-    def id(self):
+    def id(self) -> KDF_IDS:
         return KDF_IDS.HKDF_SHA384
 
     @property
-    def _hash(self):
+    def _hash(self) -> HashAlgorithm:
         return SHA384()
 
     @property
@@ -131,11 +131,11 @@ class HkdfSHA512(AbstractHkdf):
     """
 
     @property
-    def id(self):
+    def id(self) -> KDF_IDS:
         return KDF_IDS.HKDF_SHA512
 
     @property
-    def _hash(self):
+    def _hash(self) -> HashAlgorithm:
         return SHA512()
 
     @property
