@@ -1,57 +1,61 @@
-from abc import ABC, abstractmethod
 from utilities import xor_bytes
 from utilities import I2OSP
 from KDF import AbstractHkdf
 from AEAD import AbstractAead
 
-class AbtractContext(ABC):
+
+class MessageLimitReachedError(Exception):
+    pass
+
+
+class AbstractContext:
     """
     
     """
 
-    def __init__(self, kdf: AbstractHkdf, aead : AbstractAead, exporter_secret: bytes, basenonce: bytes):
+    def __init__(self, suite_id: bytes, kdf: AbstractHkdf, aead: AbstractAead, key: bytes, base_nonce: bytes, seq: int, exporter_secret: bytes):
+        self._suite_id = suite_id
         self._kdf = kdf
-        self._key = exporter_secret
-        self._seq = 0
         self._aead = aead
-        self._basenonce = basenonce
+        self._key = key
+        self._exporter_secret = exporter_secret
+        self._seq = seq
+        self._base_nonce = base_nonce
 
     def seal(self, aad, pt):
         """
         
         """
 
-        cipher = self._aead.seal(self._key, self.compute_nonce(self._seq), aad, pt)
-        self.increment_seq()
+        cipher = self._aead.seal(self._key, self._compute_nonce(self._seq), aad, pt)
+        self._increment_seq()
         return cipher
-        
+
     def open(self, aad, ct):
         """
         
         """
 
-
-        cipher = self._aead.open(self._key, self.compute_nonce(self._seq), aad, ct)
-        self.increment_seq()
+        cipher = self._aead.open(self._key, self._compute_nonce(self._seq), aad, ct)
+        self._increment_seq()
         return cipher
 
-        
     def export(self, exporter_content, L):
         """
          
         """
 
-        return self._kdf.labeled_expand(self._key, b"sec", exporter_content, L)
-    
-    def compute_nonce(self, seq) -> bytes:
+        return self._kdf.labeled_expand(self._exporter_secret, b"sec", exporter_content, L, suite_id=self._suite_id)
+
+    def _compute_nonce(self, seq) -> bytes:
         """
         
         """
 
         seq_bytes = I2OSP(seq, self._aead.Nn)
-        return xor_bytes(self._basenonce, seq_bytes)
-    
-    def increment_seq(self):
+        return xor_bytes(self._base_nonce, seq_bytes)
+
+    def _increment_seq(self):
         """
         
         """
@@ -60,46 +64,40 @@ class AbtractContext(ABC):
         self._seq += 1
 
 
-
-class ContextExportOnly(AbtractContext):
+class ContextExportOnly(AbstractContext):
     """
     
     """
 
-    def __init__(self, kdf: AbstractHkdf, exporter_secret: bytes):
-        """
-        
+    def __init__(self, suite_id: bytes, kdf: AbstractHkdf, exporter_secret: bytes):
         """
 
+        """
+
+        self._suite_id = suite_id
         self._kdf = kdf
         self._key = exporter_secret
 
-    def seal(self):
+    def seal(self, aad, pt):
         raise NotImplementedError("Invalid in export-only")
-    
-    def open(self):
+
+    def open(self, aad, ct):
         raise NotImplementedError("Invalid in export-only")
-        
 
 
-
-class ContextSender(AbtractContext):
+class ContextSender(AbstractContext):
     """
     
     """
 
-    # def __init__(self, kdf: AbstractHkdf, aead: AbstractAead, exporter_secret: bytes, basenonce: bytes):
-    #     super().__init__(kdf, aead, exporter_secret, basenonce)
-
-    def open(self):
+    def open(self, aad, ct):
         raise NotImplementedError("Invalid in export-only")
 
 
-
-class ContextRecipient(AbtractContext):
+class ContextRecipient(AbstractContext):
     """
     
     """
 
-    def seal(self):
+    def seal(self, aad, pt):
         raise NotImplementedError("Invalid in export-only")
