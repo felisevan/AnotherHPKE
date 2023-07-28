@@ -17,6 +17,11 @@ class DeriveKeyPairError(Exception):
     Key pair derivation failure
     """
 
+class DeserializeError(Exception):
+    """
+    Public or private key deserialization failure
+    """
+
 
 class AbstractKEM(ABC):
     @property
@@ -37,6 +42,11 @@ class AbstractKEM(ABC):
     @property
     @abstractmethod
     def _Nsk(self) -> int:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def _Npk(self) -> int:
         raise NotImplementedError
 
     @property
@@ -179,6 +189,9 @@ class EcAbstractKem(AbstractKEM):
         )
 
     def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey:
+        if len(pkXm) != self._Npk:
+            raise DeserializeError("Mismatched public key length")
+
         return EllipticCurvePublicKey.from_encoded_point(
             curve=self._curve(),
             data=pkXm
@@ -215,6 +228,10 @@ class DhKemP256HkdfSha256(EcAbstractKem):
     def _Nsk(self) -> int:
         return 32
 
+    @property
+    def _Npk(self) -> int:
+        return 65
+
 
 class DhKemP384HkdfSha384(EcAbstractKem):
 
@@ -246,6 +263,10 @@ class DhKemP384HkdfSha384(EcAbstractKem):
     def _Nsk(self) -> int:
         return 48
 
+    @property
+    def _Npk(self) -> int:
+        return 97
+
 
 class DhKemP521HkdfSha512(EcAbstractKem):
 
@@ -276,6 +297,10 @@ class DhKemP521HkdfSha512(EcAbstractKem):
     @property
     def _Nsk(self) -> int:
         return 66
+
+    @property
+    def _Npk(self) -> int:
+        return 133
 
 
 class XEcAbstractKem(AbstractKEM):
@@ -313,6 +338,9 @@ class XEcAbstractKem(AbstractKEM):
         return pkX.public_bytes_raw()
 
     def deserialize_public_key(self, pkXm: bytes) -> X25519PublicKey | X448PublicKey:
+        if len(pkXm) != self._Npk:
+            raise DeserializeError("Mismatched public key length")
+
         if self._curve is X25519PrivateKey:
             public_curve = X25519PublicKey
         elif self._curve is X448PrivateKey:
@@ -344,6 +372,10 @@ class DhKemX25519HkdfSha256(XEcAbstractKem):
     def _Nsk(self) -> int:
         return 32
 
+    @property
+    def _Npk(self) -> int:
+        return 32
+
 
 class DhKemX448HkdfSha512(XEcAbstractKem):
     @property
@@ -364,4 +396,8 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
 
     @property
     def _Nsk(self) -> int:
+        return 56
+
+    @property
+    def _Npk(self) -> int:
         return 56
