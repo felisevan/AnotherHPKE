@@ -1,4 +1,3 @@
-import struct
 from abc import ABC, abstractmethod
 from typing import Type
 
@@ -51,7 +50,8 @@ class KEM(ABC):
 
     @abstractmethod
     def derive_key_pair(self, ikm: bytes) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | \
-                                      tuple[X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
+                                             tuple[X25519PrivateKey, X25519PublicKey] | \
+                                             tuple[X448PrivateKey, X448PublicKey]:
         raise NotImplementedError
 
     @abstractmethod
@@ -201,7 +201,7 @@ class DhKemP256HkdfSha256(EcKem):
 
     @property
     def id(self) -> KEM_IDS:
-        return  KEM_IDS.DHKEM_P_256_HKDF_SHA256
+        return KEM_IDS.DHKEM_P_256_HKDF_SHA256
 
     @property
     def _KDF(self) -> AbstractHkdf:
@@ -290,8 +290,8 @@ class XEcKem(KEM):
         public_key = private_key.public_key()
         return private_key, public_key
 
-    def derive_key_pair(self, ikm: bytes) -> tuple[X25519PrivateKey, X25519PublicKey] | tuple[
-        X448PrivateKey, X448PublicKey]:
+    def derive_key_pair(self, ikm: bytes) -> tuple[X25519PrivateKey, X25519PublicKey] | \
+                                             tuple[X448PrivateKey, X448PublicKey]:
 
         dkp_prk = self._KDF.labeled_extract(
             salt=b"",
@@ -306,7 +306,7 @@ class XEcKem(KEM):
             L=self._Nsk,
             suite_id=self._suite_id
         )
-        sk =  self._curve.from_private_bytes(sk)
+        sk = self._curve.from_private_bytes(sk)
         return sk, sk.public_key()
 
     def serialize_public_key(self, pkX: X25519PublicKey | X448PublicKey) -> bytes:
