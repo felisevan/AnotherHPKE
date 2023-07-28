@@ -21,13 +21,9 @@ def OS2IP(x: bytes) -> int:
     return int.from_bytes(x, byteorder="big")
 
 
-def xor_bytes(value1,value2):
+def xor_bytes(a: bytes, b: bytes) -> bytes:
     """
     
     """
 
-    f = lambda a,b: bytes([x ^ y for x,y in zip(a,b)])
-    return f(value1,value2)
-
-
-# def suite_id
+    return bytes((x ^ y for x, y in zip(a, b)))
