@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
-
+from constants import AEAD_IDS
 
 class AbstractAead(ABC):
     """
 
     """
+
+    @property
+    @abstractmethod
+    def id(self):
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -49,6 +54,10 @@ class AeadAes256Gcm(AbstractAead):
     
     """
 
+    @property
+    def id(self):
+        return AEAD_IDS.AES_256_GCM
+
     def Nk(self):
         return 32
 
@@ -66,6 +75,10 @@ class AeadAes128Gcm(AbstractAead):
     """
     
     """
+
+    @property
+    def id(self):
+        return AEAD_IDS.AES_128_GCM
 
     def Nk(self):
         return 16
@@ -85,6 +98,10 @@ class AeadChaCha20Poly1305(AbstractAead):
     
     """
 
+    @property
+    def id(self):
+        return AEAD_IDS.ChaCha20Poly1305
+
     def Nk(self):
         return 32
 
@@ -102,6 +119,10 @@ class AeadExportOnly(AbstractAead):
     """
 
     """
+
+    @property
+    def id(self):
+        return AEAD_IDS.Export_only
 
     def Nk(self):
         raise NotImplementedError
