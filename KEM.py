@@ -2,10 +2,11 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 from cryptography.hazmat.primitives.asymmetric.ec import generate_private_key, derive_private_key, SECP256R1, SECP384R1, \
-    SECP521R1, EllipticCurvePublicKey, EllipticCurvePrivateKey, EllipticCurve
+    SECP521R1, EllipticCurvePublicKey, EllipticCurve
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
 from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, PublicKeyTypes
 
 from KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
 from constants import KEM_IDS
@@ -16,6 +17,7 @@ class DeriveKeyPairError(Exception):
     """
     Key pair derivation failure
     """
+
 
 class DeserializeError(Exception):
     """
@@ -54,22 +56,27 @@ class AbstractKEM(ABC):
         return concat(b"KEM", I2OSP(self.id, 2))
 
     @abstractmethod
-    def generate_key_pair(self) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | \
-                                   tuple[X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
+    def generate_key_pair(self) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         raise NotImplementedError
 
     @abstractmethod
-    def derive_key_pair(self, ikm: bytes) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey] | \
-                                             tuple[X25519PrivateKey, X25519PublicKey] | \
-                                             tuple[X448PrivateKey, X448PublicKey]:
+    def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         raise NotImplementedError
 
     @abstractmethod
-    def serialize_public_key(self, pkX: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey) -> bytes:
+    def serialize_public_key(self, pkX: PublicKeyTypes) -> bytes:
         raise NotImplementedError
 
     @abstractmethod
-    def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey | X25519PublicKey | X448PublicKey:
+    def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
+        raise NotImplementedError
+
+    @abstractmethod
+    def serialize_private_key(self, pkX: PrivateKeyTypes) -> bytes:
+        raise NotImplementedError
+
+    @abstractmethod
+    def deserialize_private_key(self, pkXm: bytes) -> PrivateKeyTypes:
         raise NotImplementedError
 
     def extract_and_expand(self, dh: bytes, kem_context: bytes) -> bytes:
@@ -88,7 +95,7 @@ class AbstractKEM(ABC):
         )
         return shared_secret
 
-    def encap(self, pkR: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey):
+    def encap(self, pkR: PublicKeyTypes):
         skE, pkE = self.generate_key_pair()
         dh = skE.exchange(pkR)
         enc = self.serialize_public_key(pkE)
@@ -99,7 +106,7 @@ class AbstractKEM(ABC):
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret, enc
 
-    def decap(self, enc: bytes, skR: EllipticCurvePrivateKey | X25519PrivateKey | X448PrivateKey):
+    def decap(self, enc: bytes, skR: PrivateKeyTypes):
         pkE = self.deserialize_public_key(enc)
         dh = skR.exchange(pkE)
 
@@ -109,8 +116,7 @@ class AbstractKEM(ABC):
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret
 
-    def auth_encap(self, pkR: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey,
-                   skS: EllipticCurvePrivateKey | X25519PrivateKey | X448PrivateKey):
+    def auth_encap(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes):
         skE, pkE = self.generate_key_pair()
         # skE = X25519PrivateKey.from_private_bytes(bytes.fromhex("14de82a5897b613616a00c39b87429df35bc2b426bcfd73febcb45e903490768"))
         # pkE = skE.public_key()
@@ -124,8 +130,7 @@ class AbstractKEM(ABC):
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret, enc
 
-    def auth_decap(self, enc: bytes, skR: EllipticCurvePrivateKey | X25519PrivateKey | X448PrivateKey,
-                   pkS: EllipticCurvePublicKey | X25519PublicKey | X448PublicKey):
+    def auth_decap(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes):
         pkE = self.deserialize_public_key(enc)
         dh = concat(skR.exchange(pkE), skR.exchange(pkS))
 
@@ -154,43 +159,54 @@ class EcAbstractKem(AbstractKEM):
     def _bitmask(self) -> int:
         raise NotImplementedError
 
-    def generate_key_pair(self) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]:
+    def generate_key_pair(self) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         private_key = generate_private_key(self._curve())
         public_key = private_key.public_key()
         return private_key, public_key
 
-    def derive_key_pair(self, ikm: bytes) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]:
+    def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
+        # FIXME: buggy
         dkp_prk = self._KDF.labeled_extract(
             salt=b"",
             label=b"dkp_prk",
             ikm=ikm,
             suite_id=self._suite_id
         )
-        sk = 0
-        counter = 0
-        while sk == 0 or sk >= self._order:
-            if counter > 255:
-                raise DeriveKeyPairError
-            _bytes = bytearray(self._KDF.labeled_expand(
-                prk=dkp_prk,
-                info=b"candidate",
-                label=I2OSP(counter, 1),
-                L=self._Nsk,
-                suite_id=self._suite_id
-            ))
-            _bytes[0] = _bytes[0] & self._bitmask
-            sk = OS2IP(bytes(_bytes))
-            counter = counter + 1
-        sk = derive_private_key(sk, self._curve())
+        target = self._KDF.labeled_expand(
+            prk=dkp_prk,
+            info=b"candidate",
+            label=I2OSP(1, 1),
+            L=self._Nsk,
+            suite_id=self._suite_id
+        )
+        print(target.hex())
+        # sk = 0
+        # counter = 0
+        # print(self._KDF)
+        # while sk == 0 or sk >= self._order:
+        #     if counter > 255:
+        #         raise DeriveKeyPairError
+        #     _bytes = OS2IP(self._KDF.labeled_expand(
+        #         prk=dkp_prk,
+        #         info=b"candidate",
+        #         label=I2OSP(counter, 1),
+        #         L=self._Nsk,
+        #         suite_id=self._suite_id
+        #     ))
+        #     # _bytes[0] = _bytes[0] & self._bitmask
+        #     sk = _bytes
+        #     print(I2OSP(sk, self._Nsk).hex())
+        #     counter = counter + 1
+        sk = self.deserialize_private_key(target)
         return sk, sk.public_key()
 
-    def serialize_public_key(self, pkX: EllipticCurvePublicKey) -> bytes:
+    def serialize_public_key(self, pkX: PublicKeyTypes) -> bytes:
         return pkX.public_bytes(
             encoding=Encoding.X962,
             format=PublicFormat.UncompressedPoint
         )
 
-    def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey:
+    def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
         if len(pkXm) != self._Npk:
             raise DeserializeError("Mismatched public key length")
 
@@ -198,6 +214,12 @@ class EcAbstractKem(AbstractKEM):
             curve=self._curve(),
             data=pkXm
         )
+
+    def serialize_private_key(self, pkX: PrivateKeyTypes) -> bytes:
+        return I2OSP(pkX.private_numbers().private_value, self._Nsk)
+
+    def deserialize_private_key(self, pkXm: bytes) -> PrivateKeyTypes:
+        return derive_private_key(OS2IP(pkXm), self._curve())
 
 
 class DhKemP256HkdfSha256(EcAbstractKem):
@@ -309,16 +331,15 @@ class XEcAbstractKem(AbstractKEM):
 
     @property
     @abstractmethod
-    def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
+    def _curve(self) -> PrivateKeyTypes:
         raise NotImplementedError
 
-    def generate_key_pair(self) -> tuple[X25519PrivateKey, X25519PublicKey] | tuple[X448PrivateKey, X448PublicKey]:
+    def generate_key_pair(self) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         private_key = self._curve.generate()
         public_key = private_key.public_key()
         return private_key, public_key
 
-    def derive_key_pair(self, ikm: bytes) -> tuple[X25519PrivateKey, X25519PublicKey] | \
-                                             tuple[X448PrivateKey, X448PublicKey]:
+    def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
 
         dkp_prk = self._KDF.labeled_extract(
             salt=b"",
@@ -336,10 +357,10 @@ class XEcAbstractKem(AbstractKEM):
         sk = self._curve.from_private_bytes(sk)
         return sk, sk.public_key()
 
-    def serialize_public_key(self, pkX: X25519PublicKey | X448PublicKey) -> bytes:
+    def serialize_public_key(self, pkX: PublicKeyTypes) -> bytes:
         return pkX.public_bytes_raw()
 
-    def deserialize_public_key(self, pkXm: bytes) -> X25519PublicKey | X448PublicKey:
+    def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
         if len(pkXm) != self._Npk:
             raise DeserializeError("Mismatched public key length")
 
@@ -351,6 +372,13 @@ class XEcAbstractKem(AbstractKEM):
             raise NotImplementedError
 
         return public_curve.from_public_bytes(pkXm)
+
+    def serialize_private_key(self, pkX: PrivateKeyTypes) -> bytes:
+        raise pkX.private_bytes_raw()
+
+    def deserialize_private_key(self, pkXm: bytes) -> PrivateKeyTypes:
+        return self._curve.from_private_bytes(pkXm)
+
 
 
 class DhKemX25519HkdfSha256(XEcAbstractKem):
