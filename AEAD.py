@@ -2,42 +2,71 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
+
 from constants import AEAD_IDS
 
 
 class AbstractAead(ABC):
     """
-
+    Abstract class of AEAD with declaring  methods.
     """
 
     @property
     @abstractmethod
     def id(self) -> AEAD_IDS:
+        """
+        the AEAD id
+        :rtype: object
+        """
         raise NotImplementedError
 
     @property
     @abstractmethod
     def Nk(self) -> int:
+        """
+        The length in bytes of a key for this algorithm
+        :rtype: object
+        """
         raise NotImplementedError
 
     @property
     @abstractmethod
     def Nn(self) -> int:
+        """
+        The length in bytes of a nonce for this algorithm
+        :rtype: object
+        """
         raise NotImplementedError
 
     @property
     @abstractmethod
     def Nt(self) -> int:
+        """
+        The length in bytes of the authentication tag for this algorithm
+        :rtype: object
+        """
         raise NotImplementedError
 
     @property
     @abstractmethod
     def _algorithm(self) -> Callable:
+        """
+        method gives the algorithm that is used
+        :rtype: object
+        """
         raise NotImplementedError
 
     def seal(self, key, nonce, aad, pt) -> bytes:
         """
-        
+        Encrypt and authenticate plaintext pt with associated data aad using symmetric key key and nonce nonce,
+        yielding ciphertext and tag ct.
+        This function can raise a MessageLimitReachedError upon failure
+        :param key:
+        :param nonce:
+        :param aad:
+        :param pt:
+        :return:
+        :rtype: object
         """
 
         cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
@@ -45,7 +74,15 @@ class AbstractAead(ABC):
 
     def open(self, key, nonce, aad, ct) -> bytes:
         """
-        
+        Decrypt ciphertext and tag ct using associated data aad with symmetric key key and nonce nonce,
+         returning plaintext message pt.
+         This function can raise an OpenError or MessageLimitReachedError upon failure.
+        :param key:
+        :param nonce:
+        :param aad:
+        :param ct:
+        :return:
+        :rtype: object
         """
         cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
         return cipher.decrypt(nonce=nonce, data=ct, associated_data=aad)
@@ -53,108 +90,192 @@ class AbstractAead(ABC):
 
 class AeadAes256Gcm(AbstractAead):
     """
-    
+    AES-256-GCM
     """
 
     @property
     def id(self) -> AEAD_IDS:
+        """
+
+        :rtype: object
+        """
         return AEAD_IDS.AES_256_GCM
 
     @property
     def Nk(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 32
 
     @property
     def Nn(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 12
 
     @property
     def Nt(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 16
 
     @property
     def _algorithm(self) -> Callable:
+        """
+
+        :rtype: object
+        """
         return AESGCM
 
 
 class AeadAes128Gcm(AbstractAead):
     """
-    
+    AES-128-GCM
     """
 
     @property
     def id(self) -> AEAD_IDS:
+        """
+
+        :rtype: object
+        """
         return AEAD_IDS.AES_128_GCM
 
     @property
     def Nk(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 16
 
     @property
     def Nn(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 12
 
     @property
     def Nt(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 16
 
     @property
     def _algorithm(self) -> Callable:
+        """
+
+        :rtype: object
+        """
         return AESGCM
 
 
 class AeadChaCha20Poly1305(AbstractAead):
     """
-    
+    ChaCha20Poly1305
     """
 
     @property
     def id(self) -> AEAD_IDS:
+        """
+
+        :rtype: object
+        """
         return AEAD_IDS.ChaCha20Poly1305
 
     @property
     def Nk(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 32
 
     @property
     def Nn(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 12
 
     @property
     def Nt(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 16
 
     @property
     def _algorithm(self) -> Callable:
+        """
+
+        :rtype: object
+        """
         return ChaCha20Poly1305
 
 
 class AeadExportOnly(AbstractAead):
     """
-
+    Export-only
     """
 
     @property
     def id(self) -> AEAD_IDS:
+        """
+
+        :rtype: object
+        """
         return AEAD_IDS.Export_only
 
     @property
     def Nk(self) -> int:
+        """
+
+        :rtype: object
+        """
         raise NotImplementedError
 
     @property
     def Nn(self) -> int:
+        """
+
+        :rtype: object
+        """
         raise NotImplementedError
 
     @property
     def Nt(self) -> int:
+        """
+
+        :rtype: object
+        """
         raise NotImplementedError
 
     @property
     def _algorithm(self) -> Callable:
+        """
+
+        :rtype: object
+        """
         raise NotImplementedError
 
     def seal(self, key, nonce, aad, pt) -> bytes:
+        """
+
+        :rtype: object
+        """
         raise NotImplementedError
 
     def open(self, key, nonce, aad, ct) -> bytes:
