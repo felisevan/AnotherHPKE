@@ -245,7 +245,7 @@ class AeadExportOnly(AbstractAead):
 
         :rtype: object
         """
-        raise NotImplementedError
+        raise NotImplementedError("Export only")
 
     @property
     def Nn(self) -> int:
@@ -253,7 +253,7 @@ class AeadExportOnly(AbstractAead):
 
         :rtype: object
         """
-        raise NotImplementedError
+        raise NotImplementedError("Export only")
 
     @property
     def Nt(self) -> int:
@@ -261,7 +261,7 @@ class AeadExportOnly(AbstractAead):
 
         :rtype: object
         """
-        raise NotImplementedError
+        raise NotImplementedError("Export only")
 
     @property
     def _algorithm(self) -> Callable:
@@ -269,17 +269,17 @@ class AeadExportOnly(AbstractAead):
 
         :rtype: object
         """
-        raise NotImplementedError
+        raise NotImplementedError("Export only")
 
     def seal(self, key, nonce, aad, pt) -> bytes:
         """
 
         :rtype: object
         """
-        raise NotImplementedError
+        raise NotImplementedError("Export only")
 
     def open(self, key, nonce, aad, ct) -> bytes:
-        raise NotImplementedError
+        raise NotImplementedError("Export only")
 
 
 class AeadFactory:
