@@ -71,7 +71,7 @@ class AbstractHkdf(ABC):
 
         while len(data) < L:
             ctx = hmac.HMAC(prk, self._hash)
-            ctx.update(t_n_minus_1 + info + n.to_bytes(1, byteorder="big"))
+            ctx.update(t_n_minus_1 + info + I2OSP(n, 1))
             t_n_minus_1 = ctx.finalize()
             data += t_n_minus_1
             n += 1
