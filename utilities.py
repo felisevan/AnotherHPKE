@@ -4,7 +4,11 @@ def concat(*args: bytes) -> bytes:
 
 def I2OSP(n: int, w: int) -> bytes:
     """
-    
+    Convert non-negative integer n to a w-length, big-endian byte string
+    :param n: non-negative integer
+    :param w: length
+    :return: byte string with w length
+    :rtype: bytes
     """
 
     return int.to_bytes(n, length=w, byteorder="big")
@@ -12,7 +16,10 @@ def I2OSP(n: int, w: int) -> bytes:
 
 def OS2IP(x: bytes) -> int:
     """
-    
+    Convert byte string x to a non-negative integer
+    :param x: byte string in big-endian
+    :return: integer
+    :rtype: int
     """
 
     return int.from_bytes(x, byteorder="big")
@@ -20,7 +27,11 @@ def OS2IP(x: bytes) -> int:
 
 def xor_bytes(a: bytes, b: bytes) -> bytes:
     """
-    
+    XOR of byte strings
+    :param a: byte string a
+    :param b: byte string b
+    :return:  byte string after XOR computing
+    :rtype: bytes
     """
     if len(a) != len(b):
         raise ValueError("the length of two bytes must be same")
