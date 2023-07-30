@@ -116,11 +116,15 @@ class ContextFactory:
                                            self._default_psk, self._default_psk_id)
 
     def SetupPSKS(self, pkR, info, psk, psk_id):
+        if len(psk) < 32:
+            raise Exception
         shared_secret, enc = self.kem.encap(pkR)
         return enc, self.key_schedule_sender(MODE_IDS.MODE_PSK, shared_secret, info,
                                              psk, psk_id)
 
     def SetupPSKR(self, enc, skR, info, psk, psk_id):
+        if len(psk) < 32:
+            raise Exception
         shared_secret = self.kem.decap(enc, skR)
         return self.key_schedule_recipient(MODE_IDS.MODE_PSK, shared_secret, info, psk, psk_id)
 
@@ -135,11 +139,15 @@ class ContextFactory:
                                            self._default_psk, self._default_psk_id)
 
     def SetupAuthPSKS(self, pkR, info, psk, psk_id, skS):
+        if len(psk) < 32:
+            raise Exception
         shared_secret, enc = self.kem.auth_encap(pkR, skS)
         return enc, self.key_schedule_sender(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
                                              psk, psk_id)
 
     def SetupAuthPSKR(self, enc, skR, info, psk, psk_id, pkS):
+        if len(psk) < 32:
+            raise Exception
         shared_secret = self.kem.auth_decap(enc, skR, pkS)
         return self.key_schedule_recipient(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
                                            psk, psk_id)

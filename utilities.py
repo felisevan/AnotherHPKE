@@ -25,5 +25,6 @@ def xor_bytes(a: bytes, b: bytes) -> bytes:
     """
     
     """
-
+    if len(a) != len(b):
+        raise Exception
     return bytes((x ^ y for x, y in zip(a, b)))
