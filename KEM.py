@@ -95,8 +95,14 @@ class AbstractKEM(ABC):
         )
         return shared_secret
 
-    def encap(self, pkR: PublicKeyTypes):
-        skE, pkE = self.generate_key_pair()
+    def encap(self, pkR: PublicKeyTypes, skE: bytes = None, pkE: bytes = None):
+        if (not skE) and (not pkE):
+            skE, pkE = self.generate_key_pair()
+        else:
+            skE = self.deserialize_private_key(skE)
+            pkE = self.deserialize_public_key(pkE)
+            print("WARNING: skE and pkE are override by input value instead of random generated")
+            assert skE.public_key() == pkE
         dh = skE.exchange(pkR)
         enc = self.serialize_public_key(pkE)
 
@@ -116,10 +122,14 @@ class AbstractKEM(ABC):
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret
 
-    def auth_encap(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes):
-        skE, pkE = self.generate_key_pair()
-        # skE = X25519PrivateKey.from_private_bytes(bytes.fromhex("14de82a5897b613616a00c39b87429df35bc2b426bcfd73febcb45e903490768"))
-        # pkE = skE.public_key()
+    def auth_encap(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, skE: bytes = None, pkE: bytes = None):
+        if (not skE) and (not pkE):
+            skE, pkE = self.generate_key_pair()
+        else:
+            skE = self.deserialize_private_key(skE)
+            pkE = self.deserialize_public_key(pkE)
+            print("WARNING: skE and pkE are override by input value instead of random generated")
+            assert skE.public_key() == pkE
         dh = concat(skE.exchange(pkR), skS.exchange(pkR))
         enc = self.serialize_public_key(pkE)
 
@@ -426,3 +436,21 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
     @property
     def _Npk(self) -> int:
         return 56
+
+
+class KemFactory:
+    @classmethod
+    def new(cls, kem_id: KEM_IDS) -> DhKemP256HkdfSha256 | DhKemP384HkdfSha384 | DhKemP521HkdfSha512 | DhKemX25519HkdfSha256 | DhKemX448HkdfSha512:
+        match kem_id:
+            case KEM_IDS.DHKEM_P_256_HKDF_SHA256:
+                return DhKemP256HkdfSha256()
+            case KEM_IDS.DHKEM_P_384_HKDF_SHA384:
+                return DhKemP384HkdfSha384()
+            case KEM_IDS.DHKEM_P_521_HKDF_SHA512:
+                return DhKemP521HkdfSha512()
+            case KEM_IDS.DHKEM_X25519_HKDF_SHA256:
+                return DhKemX25519HkdfSha256()
+            case KEM_IDS.DHKEM_X448_HKDF_SHA512:
+                return DhKemX448HkdfSha512()
+            case _:
+                raise NotImplementedError

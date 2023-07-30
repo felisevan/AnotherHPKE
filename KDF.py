@@ -202,3 +202,17 @@ class HkdfSHA512(AbstractHkdf):
         :rtype: object
         """
         return 64
+
+
+class KdfFactory:
+    @classmethod
+    def new(cls, kdf_id: KDF_IDS) -> HkdfSHA256 | HkdfSHA384 | HkdfSHA512:
+        match kdf_id:
+            case KDF_IDS.HKDF_SHA256:
+                return HkdfSHA256()
+            case KDF_IDS.HKDF_SHA384:
+                return HkdfSHA384()
+            case KDF_IDS.HKDF_SHA512:
+                return HkdfSHA512()
+            case _:
+                raise NotImplementedError
