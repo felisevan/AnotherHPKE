@@ -165,6 +165,8 @@ class EcAbstractKem(AbstractKEM):
         return private_key, public_key
 
     def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
+        if len(ikm) < self._Nsk:
+            raise Exception
         # FIXME: buggy
         dkp_prk = self._KDF.labeled_extract(
             salt=b"",
@@ -172,32 +174,22 @@ class EcAbstractKem(AbstractKEM):
             ikm=ikm,
             suite_id=self._suite_id
         )
-        target = self._KDF.labeled_expand(
-            prk=dkp_prk,
-            info=b"candidate",
-            label=I2OSP(1, 1),
-            L=self._Nsk,
-            suite_id=self._suite_id
-        )
-        print(target.hex())
-        # sk = 0
-        # counter = 0
-        # print(self._KDF)
-        # while sk == 0 or sk >= self._order:
-        #     if counter > 255:
-        #         raise DeriveKeyPairError
-        #     _bytes = OS2IP(self._KDF.labeled_expand(
-        #         prk=dkp_prk,
-        #         info=b"candidate",
-        #         label=I2OSP(counter, 1),
-        #         L=self._Nsk,
-        #         suite_id=self._suite_id
-        #     ))
-        #     # _bytes[0] = _bytes[0] & self._bitmask
-        #     sk = _bytes
-        #     print(I2OSP(sk, self._Nsk).hex())
-        #     counter = counter + 1
-        sk = self.deserialize_private_key(target)
+        sk = 0
+        counter = 0
+        while sk == 0 or sk >= self._order:
+            if counter > 255:
+                raise DeriveKeyPairError
+            _bytes = bytearray(self._KDF.labeled_expand(
+                prk=dkp_prk,
+                label=b"candidate",
+                info=I2OSP(0, 1),
+                L=self._Nsk,
+                suite_id=self._suite_id
+            ))
+            _bytes[0] = _bytes[0] & self._bitmask
+            sk = OS2IP(_bytes)
+            counter = counter + 1
+        sk = self.deserialize_private_key(I2OSP(sk, self._Nsk))
         return sk, sk.public_key()
 
     def serialize_public_key(self, pkX: PublicKeyTypes) -> bytes:
@@ -219,6 +211,9 @@ class EcAbstractKem(AbstractKEM):
         return I2OSP(pkX.private_numbers().private_value, self._Nsk)
 
     def deserialize_private_key(self, pkXm: bytes) -> PrivateKeyTypes:
+        if OS2IP(pkXm) % self._order == 0:
+            # TODO: ambiguous mod operation
+            raise Exception
         return derive_private_key(OS2IP(pkXm), self._curve())
 
 
@@ -340,7 +335,8 @@ class XEcAbstractKem(AbstractKEM):
         return private_key, public_key
 
     def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
-
+        if len(ikm) < self._Nsk:
+            raise Exception
         dkp_prk = self._KDF.labeled_extract(
             salt=b"",
             label=b"dkp_prk",
@@ -378,7 +374,6 @@ class XEcAbstractKem(AbstractKEM):
 
     def deserialize_private_key(self, pkXm: bytes) -> PrivateKeyTypes:
         return self._curve.from_private_bytes(pkXm)
-
 
 
 class DhKemX25519HkdfSha256(XEcAbstractKem):
