@@ -4,9 +4,6 @@ from KDF import KdfFactory, AbstractHkdf
 from KEM import KemFactory
 from AEAD import AeadFactory, AbstractAead
 
-class MessageLimitReachedError(Exception):
-    pass
-
 
 class AbstractContext:
     """
@@ -60,7 +57,7 @@ class AbstractContext:
         
         """
         if self._seq >= (1 << (8 * self._aead.Nn)) - 1:
-            raise MessageLimitReachedError
+            raise RuntimeError("Message limit reached")
         self._seq += 1
 
 
@@ -91,7 +88,7 @@ class ContextSender(AbstractContext):
     """
 
     def open(self, aad, ct):
-        raise NotImplementedError("Invalid in export-only")
+        raise NotImplementedError("Invalid in sender")
 
 
 class ContextRecipient(AbstractContext):
@@ -100,7 +97,7 @@ class ContextRecipient(AbstractContext):
     """
 
     def seal(self, aad, pt):
-        raise NotImplementedError("Invalid in export-only")
+        raise NotImplementedError("Invalid in recipient")
 
 
 class ContextFactory:
@@ -121,12 +118,12 @@ class ContextFactory:
         got_psk = (psk != self._default_psk)
         got_psk_id = (psk_id != self._default_psk_id)
         if got_psk != got_psk_id:
-            raise Exception("Inconsistent PSK inputs")
+            raise ValueError("Inconsistent PSK inputs")
 
         if got_psk and (mode in [MODE_IDS.MODE_BASE, MODE_IDS.MODE_AUTH]):
-            raise Exception("PSK input provided when not needed")
+            raise ValueError("PSK input provided when not needed")
         if (not got_psk) and (mode in [MODE_IDS.MODE_PSK, MODE_IDS.MODE_AUTH_PSK]):
-            raise Exception("Missing required PSK input")
+            raise ValueError("Missing required PSK input")
 
     def _key_schedule(self, mode, shared_secret, info, psk, psk_id, role):
         self._verify_psk_inputs(mode, psk, psk_id)
@@ -170,7 +167,7 @@ class ContextFactory:
                 exporter_secret=exporter_secret
             )
         else:
-            raise NotImplementedError
+            raise NotImplementedError("A new role")
 
     def key_schedule_sender(self, mode, shared_secret, info, psk, psk_id):
         return self._key_schedule(mode, shared_secret, info, psk, psk_id, "sender")
@@ -193,14 +190,14 @@ class ContextFactory:
 
     def SetupPSKS(self, pkR, info, psk, psk_id, skE: bytes = None, pkE: bytes = None):
         if len(psk) < 32:
-            raise Exception
+            raise ValueError("psk doesn't have sufficient length")
         shared_secret, enc = self.kem.encap(pkR, skE, pkE)
         return enc, self.key_schedule_sender(MODE_IDS.MODE_PSK, shared_secret, info,
                                              psk, psk_id)
 
     def SetupPSKR(self, enc, skR, info, psk, psk_id):
         if len(psk) < 32:
-            raise Exception
+            raise ValueError("psk doesn't have sufficient length")
         shared_secret = self.kem.decap(enc, skR)
         return self.key_schedule_recipient(MODE_IDS.MODE_PSK, shared_secret, info, psk, psk_id)
 
@@ -216,14 +213,14 @@ class ContextFactory:
 
     def SetupAuthPSKS(self, pkR, info, psk, psk_id, skS, skE: bytes = None, pkE: bytes = None):
         if len(psk) < 32:
-            raise Exception
+            raise ValueError("psk doesn't have sufficient length")
         shared_secret, enc = self.kem.auth_encap(pkR, skS, skE, pkE)
         return enc, self.key_schedule_sender(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
                                              psk, psk_id)
 
     def SetupAuthPSKR(self, enc, skR, info, psk, psk_id, pkS):
         if len(psk) < 32:
-            raise Exception
+            raise ValueError("psk doesn't have sufficient length")
         shared_secret = self.kem.auth_decap(enc, skR, pkS)
         return self.key_schedule_recipient(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
                                            psk, psk_id)
