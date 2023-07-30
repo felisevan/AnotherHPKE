@@ -2,7 +2,9 @@ from enum import IntEnum
 
 
 class MODE_IDS(IntEnum):
-    # TODO: docstring
+    """
+    MODE  identifiers' values
+    """
     MODE_BASE = 0x00,
     MODE_PSK = 0x01,
     MODE_AUTH = 0x02,
@@ -10,7 +12,9 @@ class MODE_IDS(IntEnum):
 
 
 class KEM_IDS(IntEnum):
-    # TODO: docstring
+    """
+    KEM  identifiers' values
+    """
     RESERVED = 0x0000
     DHKEM_P_256_HKDF_SHA256 = 0x0010,
     DHKEM_P_384_HKDF_SHA384 = 0x0011,
@@ -20,7 +24,9 @@ class KEM_IDS(IntEnum):
 
 
 class KDF_IDS(IntEnum):
-    # TODO: docstring
+    """
+    KDF  identifiers' values
+    """
     RESERVED = 0x0000
     HKDF_SHA256 = 0x0001,
     HKDF_SHA384 = 0x0002,
@@ -28,7 +34,9 @@ class KDF_IDS(IntEnum):
 
 
 class AEAD_IDS(IntEnum):
-    # TODO: docstring
+    """
+    AEAD  identifiers' values
+    """
     RESERVED = 0x0000
     AES_128_GCM = 0x0001,
     AES_256_GCM = 0x0002
