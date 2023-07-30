@@ -26,5 +26,5 @@ def xor_bytes(a: bytes, b: bytes) -> bytes:
     
     """
     if len(a) != len(b):
-        raise Exception
+        raise ValueError("the length of two bytes must be same")
     return bytes((x ^ y for x, y in zip(a, b)))

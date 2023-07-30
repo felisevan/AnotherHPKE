@@ -13,18 +13,6 @@ from constants import KEM_IDS
 from utilities import concat, I2OSP, OS2IP
 
 
-class DeriveKeyPairError(Exception):
-    """
-    Key pair derivation failure
-    """
-
-
-class DeserializeError(Exception):
-    """
-    Public or private key deserialization failure
-    """
-
-
 class AbstractKEM(ABC):
     @property
     @abstractmethod
@@ -176,8 +164,7 @@ class EcAbstractKem(AbstractKEM):
 
     def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         if len(ikm) < self._Nsk:
-            raise Exception
-        # FIXME: buggy
+            raise ValueError("ikm doesn't have sufficient length")
         dkp_prk = self._KDF.labeled_extract(
             salt=b"",
             label=b"dkp_prk",
@@ -188,7 +175,7 @@ class EcAbstractKem(AbstractKEM):
         counter = 0
         while sk == 0 or sk >= self._order:
             if counter > 255:
-                raise DeriveKeyPairError
+                raise RuntimeError("You are too lucky to meet a good private key")
             _bytes = bytearray(self._KDF.labeled_expand(
                 prk=dkp_prk,
                 label=b"candidate",
@@ -210,7 +197,7 @@ class EcAbstractKem(AbstractKEM):
 
     def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
         if len(pkXm) != self._Npk:
-            raise DeserializeError("Mismatched public key length")
+            raise ValueError("Mismatched public key length")
 
         return EllipticCurvePublicKey.from_encoded_point(
             curve=self._curve(),
@@ -222,8 +209,7 @@ class EcAbstractKem(AbstractKEM):
 
     def deserialize_private_key(self, pkXm: bytes) -> PrivateKeyTypes:
         if OS2IP(pkXm) % self._order == 0:
-            # TODO: ambiguous mod operation
-            raise Exception
+            raise ValueError("the private key to be deserialized is insecure")
         return derive_private_key(OS2IP(pkXm), self._curve())
 
 
@@ -346,7 +332,7 @@ class XEcAbstractKem(AbstractKEM):
 
     def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         if len(ikm) < self._Nsk:
-            raise Exception
+            raise ValueError("ikm doesn't have sufficient length")
         dkp_prk = self._KDF.labeled_extract(
             salt=b"",
             label=b"dkp_prk",
@@ -368,19 +354,19 @@ class XEcAbstractKem(AbstractKEM):
 
     def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
         if len(pkXm) != self._Npk:
-            raise DeserializeError("Mismatched public key length")
+            raise ValueError("Mismatched public key length")
 
         if self._curve is X25519PrivateKey:
             public_curve = X25519PublicKey
         elif self._curve is X448PrivateKey:
             public_curve = X448PublicKey
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Curve not implemented")
 
         return public_curve.from_public_bytes(pkXm)
 
     def serialize_private_key(self, pkX: PrivateKeyTypes) -> bytes:
-        raise pkX.private_bytes_raw()
+        return pkX.private_bytes_raw()
 
     def deserialize_private_key(self, pkXm: bytes) -> PrivateKeyTypes:
         return self._curve.from_private_bytes(pkXm)
