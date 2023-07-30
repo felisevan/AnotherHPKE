@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256, SHA384, SHA512
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF, HKDFExpand
 
 from constants import KDF_IDS
 from utilities import concat, I2OSP
@@ -10,7 +9,7 @@ from utilities import concat, I2OSP
 
 class AbstractHkdf(ABC):
     """
-    Abstract class of HKDF with declaring abstract methods.
+    Abstract class of KDF with defining  methods.
     """
 
     @property
@@ -18,6 +17,7 @@ class AbstractHkdf(ABC):
     def id(self) -> KDF_IDS:
         """
         The KDF id.
+        :rtype: object
         """
 
         raise NotImplementedError
@@ -26,7 +26,8 @@ class AbstractHkdf(ABC):
     @abstractmethod
     def _hash(self) -> HashAlgorithm:
         """
-        The underlying hash function.
+        The underlying hash method.
+        :rtype: object
         """
 
         raise NotImplementedError
@@ -36,41 +37,32 @@ class AbstractHkdf(ABC):
     def Nh(self) -> int:
         """
         The output size of the extract() methods in bytes.
+        :rtype: object
         """
 
         raise NotImplementedError
 
-    # def _extract(self, salt: bytes, ikm: bytes, info: bytes = b"") -> bytes:
-    #     """
-    #     Extract a pseudorandom key of fixed length `Nh` bytes from input keying material `ikm`
-    #     and an optional byte string `salt`.
-    #     """
-    #
-    #     hkdf = HKDF(
-    #         algorithm=self._hash,
-    #         length=self.Nh,
-    #         salt=salt,
-    #     )
-    #     return hkdf.derive(ikm)
-    #
-    # def _expand(self, prk: bytes, info: bytes, L: int) -> bytes:
-    #     """
-    #     Expand a pseudorandom key `prk` using optional string `info` into `L` bytes of output keying material.
-    #     """
-    #
-    #     hkdf = HKDFExpand(
-    #         algorithm=self._hash,
-    #         length=L,
-    #         info=info,
-    #     )
-    #     return hkdf.derive(prk)
-
     def _extract(self, salt: bytes, ikm: bytes) -> bytes:
+        """
+        Extract a pseudorandom key of fixed length Nh bytes from input keying material ikm and an optional byte string salt
+        :param salt:
+        :param ikm:
+        :return:
+        :rtype: object
+        """
         ctx = hmac.HMAC(salt, self._hash)
         ctx.update(ikm)
         return ctx.finalize()
 
     def _expand(self, prk: bytes, info: bytes, L: int) -> bytes:
+        """
+        Expand a pseudorandom key prk using optional string info into L bytes of output keying material
+        :param prk:
+        :param info:
+        :param L:
+        :return:
+        :rtype: object
+        """
         assert L <= 255 * self._hash.digest_size
 
         t_n_minus_1 = b""
@@ -87,7 +79,13 @@ class AbstractHkdf(ABC):
 
     def labeled_extract(self, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes) -> bytes:
         """
-        with labeled ikm(keying material)
+        method extract with labeled ikm(keying material)
+        :param salt:
+        :param label:
+        :param ikm:
+        :param suite_id:
+        :return:
+        :rtype: object
         """
 
         labeled_ikm = concat(b"HPKE-v1", suite_id, label, ikm)
@@ -98,7 +96,14 @@ class AbstractHkdf(ABC):
 
     def labeled_expand(self, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes) -> bytes:
         """
-        with labeled info(optional string)
+        method expand with labeled info(optional string)
+        :param prk:
+        :param label:
+        :param info:
+        :param L:
+        :param suite_id:
+        :return:
+        :rtype: object
         """
 
         labeled_info = concat(I2OSP(L, 2), b"HPKE-v1", suite_id, label, info)
@@ -111,53 +116,89 @@ class AbstractHkdf(ABC):
 
 class HkdfSHA256(AbstractHkdf):
     """
-
+    HKDF_SHA256
     """
 
     @property
     def id(self) -> KDF_IDS:
+        """
+
+        :rtype: object
+        """
         return KDF_IDS.HKDF_SHA256
 
     @property
     def _hash(self) -> HashAlgorithm:
+        """
+
+        :rtype: object
+        """
         return SHA256()
 
     @property
     def Nh(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 32
 
 
 class HkdfSHA384(AbstractHkdf):
     """
-    
+    HKDF_SHA384
     """
 
     @property
     def id(self) -> KDF_IDS:
+        """
+
+        :rtype: object
+        """
         return KDF_IDS.HKDF_SHA384
 
     @property
     def _hash(self) -> HashAlgorithm:
+        """
+
+        :rtype: object
+        """
         return SHA384()
 
     @property
     def Nh(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 48
 
 
 class HkdfSHA512(AbstractHkdf):
     """
-    
+    HKDF_SHA512
     """
 
     @property
     def id(self) -> KDF_IDS:
+        """
+
+        :rtype: object
+        """
         return KDF_IDS.HKDF_SHA512
 
     @property
     def _hash(self) -> HashAlgorithm:
+        """
+
+        :rtype: object
+        """
         return SHA512()
 
     @property
     def Nh(self) -> int:
+        """
+
+        :rtype: object
+        """
         return 64
