@@ -102,6 +102,7 @@ class AbstractKEM(ABC):
 
     def decap(self, enc: bytes, skR: PrivateKeyTypes):
         pkE = self.deserialize_public_key(enc)
+        print(skR)
         dh = skR.exchange(pkE)
 
         pkRm = self.serialize_public_key(skR.public_key())
