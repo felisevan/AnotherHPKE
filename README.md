@@ -34,7 +34,7 @@ This project simply uses **_python3_** with package **_cryptography_**.
 
 # Author
 
-@felisevan  
-@14MBD4
+[@felisevan](https://github.com/felisevan)
+[@14MBD4](https://github.com/14MBD4)
 
 # License
