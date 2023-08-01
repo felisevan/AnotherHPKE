@@ -2,7 +2,6 @@
 
 HPKE((**Hybrid Public Key Encryption**)) implementation in **_Python3_** and package **_cryptography_** according
 to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf).
-![image](https://github.com/felisevan/AnotherHPKE/blob/main/diagram.png)
 
 #### 😭Please give us undergraduate students a little star, hoping this project meets your needs.😋
 
@@ -35,6 +34,7 @@ This project simply uses **_python3_** with package **_cryptography_**.
 
 [hpke-py](https://github.com/ctz/hpke-py/)  
 [pyhpke](https://github.com/dajiaji/pyhpke)
+
 # Author
 
 [@felisevan](https://github.com/felisevan)  
@@ -42,4 +42,4 @@ This project simply uses **_python3_** with package **_cryptography_**.
 
 # License
 
-[AGPL-3.0 license](https://github.com/felisevan/AnotherHPKE/blob/main/LICENSE)
+[AGPL-3.0 license](https://www.gnu.org/licenses/agpl-3.0-standalone.html)
