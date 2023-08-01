@@ -1,7 +1,7 @@
 # AnotherHPKE
 
-HPKE implementation in **_Python3_** and package **_cryptography_** according
-to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf)  
+HPKE((**Hybrid Public Key Encryption**)) implementation in **_Python3_** and package **_cryptography_** according
+to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf).
 ![image](https://github.com/felisevan/AnotherHPKE/blob/main/diagram.png)
 
 #### 😭Please give us undergraduate students a little star, hoping this project meets your needs.😋
@@ -10,12 +10,13 @@ to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf)
 
 # Background
 
-HPKE component is needed when building one of our other projects, ~~but we didn't find an easy-to-use and complete HPKE
-implementation~~ which gives us the incentive to implement this project in python following the RCF documentation and
+HPKE component was needed when building one of our other projects, ~~but we didn't find an easy-to-use and complete HPKE
+implementation~~ which gave us the incentive to implement this project in python following the RFC documentation and
 other authors' experience.
 
-# Install
+# Announcement
 
+# Install
 This project simply uses **_python3_** with package **_cryptography_**.
 ***
 
@@ -32,9 +33,13 @@ This project simply uses **_python3_** with package **_cryptography_**.
 
 # Related Efforts
 
+[hpke-py](https://github.com/ctz/hpke-py/)  
+[pyhpke](https://github.com/dajiaji/pyhpke)
 # Author
 
-[@felisevan](https://github.com/felisevan)
+[@felisevan](https://github.com/felisevan)  
 [@14MBD4](https://github.com/14MBD4)
 
 # License
+
+[AGPL-3.0 license](https://github.com/felisevan/AnotherHPKE/blob/main/LICENSE)
