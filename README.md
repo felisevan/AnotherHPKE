@@ -15,12 +15,22 @@ other authors' experience.
 
 # Announcement
 
-# Install
-This project simply uses **_python3_** with package **_cryptography_**.
+Due to the requirements of open source software licenses, we should not have emotional biases in our projects.
+But it is our position that agree with
+_[Universal Declaration of Human Rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights)_,
+and _[17 SDG goals](https://sdgs.un.org/goals)_, hoping to contribute to the sharing, collaboration and innovation of
+open source software,
+while safeguarding the common interests and universal values of all mankind.
 ***
 
+### Stand with Ukraine
+
+# Dependency
+This project simply uses **_python3_** with package **_cryptography_**.
 * pip  
   `pip install cryptography`
+
+***
 * conda  
   `conda install -c anaconda cryptography`   
   or  
