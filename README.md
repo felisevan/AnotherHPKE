@@ -34,6 +34,23 @@ This project simply uses **_python3_** with package **_cryptography_**.
   `conda install -c conda-forge cryptography`
 
 # Usage
+```python
+from Context import ContextFactory
+from constants import KEM_IDS, KDF_IDS, AEAD_IDS
+import os
+
+ctx_factory = ContextFactory(KEM_IDS.DHKEM_X25519_HKDF_SHA256, KDF_IDS.HKDF_SHA256, AEAD_IDS.ChaCha20Poly1305)
+sender_pri, sender_pub = ctx_factory.kem.derive_key_pair(os.urandom(32))
+recipient_pri, recipient_pub = ctx_factory.kem.derive_key_pair(os.urandom(32))
+
+# Sender side
+enc, ctx = ctx_factory.SetupBaseS(recipient_pub)
+encrypted = ctx.seal(b"plain text")
+
+# Recipient side
+ctx = ctx_factory.SetupBaseR(enc, recipient_pri)
+decrypted = ctx.open(encrypted)
+```
 
 # Badge
 
