@@ -8,20 +8,17 @@ to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf).
 #### 🥰Your recognition and support matters! 🥰
 
 # Background
-
 HPKE component was needed when building one of our other projects, ~~but we didn't find an easy-to-use and complete HPKE
 implementation~~ which gave us the incentive to implement this project in python following the RFC documentation and
 other authors' experience.
 
 # Announcement
-
-Due to the requirements of open source software licenses, we should not have emotional biases in our projects.
-But it is our position that agree with
-_[Universal Declaration of Human Rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights)_,
-and _[17 SDG goals](https://sdgs.un.org/goals)_, hoping to contribute to the sharing, collaboration and innovation of
-open source software,
-while safeguarding the common interests and universal values of all mankind.
-***
+Inspired by 
+_[Universal Declaration of Human Rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights)_
+and
+_[17 SDG goals](https://sdgs.un.org/goals)_,
+we contribute to this project in the position of safeguarding the common interests and universal values of all humankind.
+---
 
 ### Stand with Ukraine
 
