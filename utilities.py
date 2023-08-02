@@ -1,4 +1,11 @@
 def concat(*args: bytes) -> bytes:
+    """
+    Concatenate a list of bytes to a bytes.
+
+    :param args: a list of bytes
+    :return: bytes
+    :rtype: bytes
+    """
     return b"".join(args)
 
 

@@ -27,8 +27,8 @@ class AbstractHkdf(ABC):
     @abstractmethod
     def _hash(self) -> HashAlgorithm:
         """
-        The underlying hash method.
-        :return: specific hash method in use
+        The underlying hash function.
+        :return: specific hash function in use
         :rtype: HashAlgorithm
         """
 
@@ -47,10 +47,10 @@ class AbstractHkdf(ABC):
 
     def _extract(self, salt: bytes, ikm: bytes) -> bytes:
         """
-        Extract a pseudorandom key of fixed length Nh bytes from input keying material ikm and an optional byte string salt
+        Extract a pseudorandom key of fixed length Nh bytes from input keying material ikm and an optional salt.
         :param salt: salt value
         :param ikm: input keying material
-        :return: pseudorandom key with Nh bytes
+        :return: pseudorandom key with Nh bytes.
         :rtype: bytes
         """
         ctx = hmac.HMAC(salt, self._hash)
@@ -82,12 +82,13 @@ class AbstractHkdf(ABC):
 
     def labeled_extract(self, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes) -> bytes:
         """
-        method extract with labeled ikm(keying material)
+        Extract a pseudorandom key of fixed length Nh bytes from input keying material ikm and an optional byte string
+        salt but labeled with `label`
         :param salt: salt value
         :param label: specific label value
         :param ikm: input keying material
         :param suite_id: suite_id starts with "HPKE" and identify the entire cipher suite in use
-        :return: _extract method with labeled input keying material
+        :return: extract result
         :rtype: bytes
         """
 
@@ -97,17 +98,20 @@ class AbstractHkdf(ABC):
             ikm=labeled_ikm,
         )
 
-    def labeled_expand(self, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes) -> bytes:
+    def labeled_expand(self, prk: bytes, label: bytes | None, info: bytes, L: int, suite_id: bytes) -> bytes:
         """
-        method expand with labeled info(optional string)
+        Expand a pseudorandom key prk using optional string info into L bytes of output keying material,
+        but labeled with `label`
         :param prk: pseudorandom key
         :param label: specific label value
         :param info: optional string
         :param L: length
         :param suite_id: suite_id starts with "HPKE" and identify the entire cipher suite in use
-        :return: _expand method with labeled info
+        :return: expand result
         :rtype: bytes
         """
+
+        info = b"" if info is None else info
 
         labeled_info = concat(I2OSP(L, 2), b"HPKE-v1", suite_id, label, info)
         return self._expand(
