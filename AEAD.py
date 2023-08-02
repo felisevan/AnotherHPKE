@@ -51,16 +51,16 @@ class AbstractAead(ABC):
     @abstractmethod
     def _algorithm(self) -> Callable:
         """
-        method gives the algorithm that is used
+        The underlying AEAD cipher.
+        :return: specific AEAD cipher in use
         :rtype: Callable
         """
         raise NotImplementedError
 
-    def seal(self, key, nonce, aad, pt) -> bytes:
+    def seal(self, key: bytes, nonce: bytes, aad: bytes | None, pt: bytes) -> bytes:
         """
-        Encrypt and authenticate plaintext pt with associated data aad using symmetric key and nonce,
-        yielding ciphertext and tag ct.
-        This function can raise a MessageLimitReachedError upon failure
+        Encrypt plaintext `pt` and authenticate optional associated data `aad` using symmetric key and nonce,
+        returning ciphertext `ct`.
         :param key: symmetric key
         :param nonce: nonce value
         :param aad: associated data
@@ -72,15 +72,14 @@ class AbstractAead(ABC):
         cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
         return cipher.encrypt(nonce=nonce, data=pt, associated_data=aad)
 
-    def open(self, key, nonce, aad, ct) -> bytes:
+    def open(self, key: bytes, nonce: bytes, aad: bytes | None, ct: bytes) -> bytes:
         """
-        Decrypt ciphertext and tag ct using associated data aad with symmetric key and nonce,
-         returning plaintext message pt.
-         This function can raise an OpenError or MessageLimitReachedError upon failure.
+        Decrypt ciphertext `ct` and authenticate optional associated data `aad` using symmetric key and nonce,
+        returning plaintext `pt`.
         :param key: symmetric key
         :param nonce: nonce value
         :param aad: associated data
-        :param ct: plaintext
+        :param ct: ciphertext
         :return: plaintext
         :rtype: bytes
         """
@@ -252,15 +251,15 @@ class AeadExportOnly(AbstractAead):
         """
         raise NotImplementedError("Export only")
 
-    def seal(self, key, nonce, aad, pt) -> bytes:
+    def seal(self, key: None, nonce: None, aad: None, pt: None) -> None:
         """
-        :rtype: bytes
+        :rtype: None
         """
         raise NotImplementedError("Export only")
 
-    def open(self, key, nonce, aad, ct) -> bytes:
+    def open(self, key: None, nonce: None, aad: None, ct: None) -> None:
         """
-        :rtype: bytes
+        :rtype: None
         """
         raise NotImplementedError("Export only")
 

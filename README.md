@@ -8,32 +8,39 @@ to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf).
 #### 🥰Your recognition and support matters! 🥰
 
 # Background
+
 HPKE component was needed when building one of our other projects, ~~but we didn't find an easy-to-use and complete HPKE
 implementation~~ which gave us the incentive to implement this project in python following the RFC documentation and
 other authors' experience.
 
 # Announcement
-Inspired by 
+
+Inspired by
 _[Universal Declaration of Human Rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights)_
 and
 _[17 SDG goals](https://sdgs.un.org/goals)_,
-we contribute to this project in the position of safeguarding the common interests and universal values of all humankind.
+we contribute to this project in the position of safeguarding the common interests and universal values of all
+humankind.
 ---
 
 ### Stand with Ukraine
 
 # Dependency
+
 This project simply uses **_python3_** with package **_cryptography_**.
+
 * pip  
   `pip install cryptography`
 
 ***
+
 * conda  
   `conda install -c anaconda cryptography`   
   or  
   `conda install -c conda-forge cryptography`
 
 # Usage
+
 ```python
 from Context import ContextFactory
 from constants import KEM_IDS, KDF_IDS, AEAD_IDS
