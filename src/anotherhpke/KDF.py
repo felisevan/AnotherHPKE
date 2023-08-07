@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256, SHA384, SHA512
 
-from constants import KDF_IDS
-from utilities import concat, I2OSP
+from .constants import KDF_IDS
+from .utilities import concat, I2OSP
 
 
 class AbstractHkdf(ABC):
