@@ -31,7 +31,7 @@ class AbstractContext:
         self._seq = seq
         self._base_nonce = base_nonce
 
-    def seal(self, pt, aad=b"") -> bytes:
+    def seal(self, pt: bytes, aad: bytes=b"") -> bytes:
         """
         encrypt a plaintext with associated data aad in sender's context
         :param aad: aad value
@@ -43,7 +43,7 @@ class AbstractContext:
         self._increment_seq()
         return cipher
 
-    def open(self, ct, aad=b"") -> bytes:
+    def open(self, ct: bytes, aad: bytes=b"") -> bytes:
         """
         decrypt a ciphertext ct with associated data aad in recipient's context
         :param aad: aad value
@@ -55,7 +55,7 @@ class AbstractContext:
         self._increment_seq()
         return cipher
 
-    def export(self, exporter_content, L) -> bytes:
+    def export(self, exporter_content: bytes, L: bytes) -> bytes:
         """
         HPKE interface exporting secrets
         :param exporter_content: value returned from labeled_expand
@@ -65,7 +65,7 @@ class AbstractContext:
         """
         return self._kdf.labeled_expand(self._exporter_secret, b"sec", exporter_content, L, suite_id=self._suite_id)
 
-    def _compute_nonce(self, seq) -> bytes:
+    def _compute_nonce(self, seq: bytes) -> bytes:
         """
         compute next nonce
         :param seq: sequence value
