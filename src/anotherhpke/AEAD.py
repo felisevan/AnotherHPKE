@@ -3,7 +3,7 @@ from typing import Callable
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 
-from constants import AEAD_IDS
+from .constants import AEAD_IDS
 
 
 class AbstractAead(ABC):

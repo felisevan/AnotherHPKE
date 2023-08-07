@@ -8,9 +8,9 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X
 from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
-from constants import KEM_IDS
-from utilities import concat, I2OSP, OS2IP
+from .KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
+from .constants import KEM_IDS
+from .utilities import concat, I2OSP, OS2IP
 
 
 class AbstractKEM(ABC):
