@@ -1,8 +1,8 @@
 import json
 from pprint import pprint
 
-from Context import ContextFactory
-from constants import MODE_IDS, KEM_IDS, KDF_IDS, AEAD_IDS
+from src.anotherhpke.Context import ContextFactory
+from src.anotherhpke import MODE_IDS, KEM_IDS, KDF_IDS, AEAD_IDS
 
 
 def load_test_vector():
