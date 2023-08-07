@@ -42,8 +42,8 @@ This project simply uses **_python3_** with package **_cryptography_**.
 # Usage
 
 ```python
-from Context import ContextFactory
-from constants import KEM_IDS, KDF_IDS, AEAD_IDS
+from src.anotherhpke.Context import ContextFactory
+from src.anotherhpke import KEM_IDS, KDF_IDS, AEAD_IDS
 import os
 
 ctx_factory = ContextFactory(KEM_IDS.DHKEM_X25519_HKDF_SHA256, KDF_IDS.HKDF_SHA256, AEAD_IDS.ChaCha20Poly1305)
