@@ -1,17 +1,17 @@
-from enum import IntEnum
+from enum import IntEnum, auto
 
 
-class MODE_IDS(IntEnum):
+class ModeIds(IntEnum):
     """
     MODE  identifiers' values
     """
     MODE_BASE = 0x00,
-    MODE_PSK = 0x01,
-    MODE_AUTH = 0x02,
-    MODE_AUTH_PSK = 0x03
+    MODE_PSK = auto()
+    MODE_AUTH = auto()
+    MODE_AUTH_PSK = auto()
 
 
-class KEM_IDS(IntEnum):
+class KemIds(IntEnum):
     """
     KEM  identifiers' values
     """
@@ -23,22 +23,22 @@ class KEM_IDS(IntEnum):
     DHKEM_X448_HKDF_SHA512 = 0x0021
 
 
-class KDF_IDS(IntEnum):
+class KdfIds(IntEnum):
     """
     KDF  identifiers' values
     """
     RESERVED = 0x0000
-    HKDF_SHA256 = 0x0001,
-    HKDF_SHA384 = 0x0002,
-    HKDF_SHA512 = 0x0003
+    HKDF_SHA256 = auto()
+    HKDF_SHA384 = auto()
+    HKDF_SHA512 = auto()
 
 
-class AEAD_IDS(IntEnum):
+class AeadIds(IntEnum):
     """
     AEAD  identifiers' values
     """
     RESERVED = 0x0000
-    AES_128_GCM = 0x0001,
-    AES_256_GCM = 0x0002
-    ChaCha20Poly1305 = 0x0003,
+    AES_128_GCM = auto()
+    AES_256_GCM = auto()
+    ChaCha20Poly1305 = auto()
     Export_only = 0xFFFF
