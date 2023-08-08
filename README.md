@@ -42,11 +42,11 @@ This project simply uses **_python3_** with package **_cryptography_**.
 # Usage
 
 ```python
-from src.anotherhpke.Context import ContextFactory
-from src.anotherhpke import KEM_IDS, KDF_IDS, AEAD_IDS
+from anotherhpke import Context, constants
 import os
 
-ctx_factory = ContextFactory(KEM_IDS.DHKEM_X25519_HKDF_SHA256, KDF_IDS.HKDF_SHA256, AEAD_IDS.ChaCha20Poly1305)
+ctx_factory = Context.ContextFactory(constants.KemIds.DHKEM_X25519_HKDF_SHA256, constants.KdfIds.HKDF_SHA256,
+                                     constants.AeadIds.ChaCha20Poly1305)
 sender_pri, sender_pub = ctx_factory.kem.derive_key_pair(os.urandom(32))
 recipient_pri, recipient_pub = ctx_factory.kem.derive_key_pair(os.urandom(32))
 
