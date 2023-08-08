@@ -3,7 +3,7 @@ from typing import Callable
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 
-from .constants import AEAD_IDS
+from .constants import AeadIds
 
 
 class AbstractAead(ABC):
@@ -13,10 +13,10 @@ class AbstractAead(ABC):
 
     @property
     @abstractmethod
-    def id(self) -> AEAD_IDS:
+    def id(self) -> AeadIds:
         """
         the AEAD id
-        :rtype: AEAD_IDS
+        :rtype: AeadIds
         """
         raise NotImplementedError
 
@@ -93,11 +93,11 @@ class AeadAes256Gcm(AbstractAead):
     """
 
     @property
-    def id(self) -> AEAD_IDS:
+    def id(self) -> AeadIds:
         """
-        :rtype: AEAD_IDS
+        :rtype: AeadIds
         """
-        return AEAD_IDS.AES_256_GCM
+        return AeadIds.AES_256_GCM
 
     @property
     def Nk(self) -> int:
@@ -134,11 +134,11 @@ class AeadAes128Gcm(AbstractAead):
     """
 
     @property
-    def id(self) -> AEAD_IDS:
+    def id(self) -> AeadIds:
         """
-        :rtype: AEAD_IDS
+        :rtype: AeadIds
         """
-        return AEAD_IDS.AES_128_GCM
+        return AeadIds.AES_128_GCM
 
     @property
     def Nk(self) -> int:
@@ -175,12 +175,12 @@ class AeadChaCha20Poly1305(AbstractAead):
     """
 
     @property
-    def id(self) -> AEAD_IDS:
+    def id(self) -> AeadIds:
         """
 
-        :rtype: AEAD_IDS
+        :rtype: AeadIds
         """
-        return AEAD_IDS.ChaCha20Poly1305
+        return AeadIds.ChaCha20Poly1305
 
     @property
     def Nk(self) -> int:
@@ -217,11 +217,11 @@ class AeadExportOnly(AbstractAead):
     """
 
     @property
-    def id(self) -> AEAD_IDS:
+    def id(self) -> AeadIds:
         """
-        :rtype: AEAD_IDS
+        :rtype: AeadIds
         """
-        return AEAD_IDS.Export_only
+        return AeadIds.Export_only
 
     @property
     def Nk(self) -> int:
@@ -270,7 +270,7 @@ class AeadFactory:
     """
 
     @classmethod
-    def new(cls, aead_id: AEAD_IDS) -> AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly:
+    def new(cls, aead_id: AeadIds) -> AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly:
         """
         return an instance of AeadAes128Gcm or AeadAes256Gcm or AeadChaCha20Poly1305 or AeadExportOnly
         :param aead_id: AEAD id
@@ -278,13 +278,13 @@ class AeadFactory:
         :rtype: AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly
         """
         match aead_id:
-            case AEAD_IDS.AES_128_GCM:
+            case AeadIds.AES_128_GCM:
                 return AeadAes128Gcm()
-            case AEAD_IDS.AES_256_GCM:
+            case AeadIds.AES_256_GCM:
                 return AeadAes256Gcm()
-            case AEAD_IDS.ChaCha20Poly1305:
+            case AeadIds.ChaCha20Poly1305:
                 return AeadChaCha20Poly1305()
-            case AEAD_IDS.Export_only:
+            case AeadIds.Export_only:
                 return AeadExportOnly()
             case _:
                 raise NotImplementedError

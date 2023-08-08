@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256, SHA384, SHA512
 
-from .constants import KDF_IDS
+from .constants import KdfIds
 from .utilities import concat, I2OSP
 
 
@@ -14,11 +14,11 @@ class AbstractHkdf(ABC):
 
     @property
     @abstractmethod
-    def id(self) -> KDF_IDS:
+    def id(self) -> KdfIds:
         """
         The KDF id.
         :return: KDF id
-        :rtype: KDF_IDS
+        :rtype: KdfIds
         """
 
         raise NotImplementedError
@@ -127,11 +127,11 @@ class HkdfSHA256(AbstractHkdf):
     """
 
     @property
-    def id(self) -> KDF_IDS:
+    def id(self) -> KdfIds:
         """
-        :rtype: KDF_IDS
+        :rtype: KdfIds
         """
-        return KDF_IDS.HKDF_SHA256
+        return KdfIds.HKDF_SHA256
 
     @property
     def _hash(self) -> HashAlgorithm:
@@ -154,11 +154,11 @@ class HkdfSHA384(AbstractHkdf):
     """
 
     @property
-    def id(self) -> KDF_IDS:
+    def id(self) -> KdfIds:
         """
-        :rtype: KDF_IDS
+        :rtype: KdfIds
         """
-        return KDF_IDS.HKDF_SHA384
+        return KdfIds.HKDF_SHA384
 
     @property
     def _hash(self) -> HashAlgorithm:
@@ -181,11 +181,11 @@ class HkdfSHA512(AbstractHkdf):
     """
 
     @property
-    def id(self) -> KDF_IDS:
+    def id(self) -> KdfIds:
         """
-        :rtype: KDF_IDS
+        :rtype: KdfIds
         """
-        return KDF_IDS.HKDF_SHA512
+        return KdfIds.HKDF_SHA512
 
     @property
     def _hash(self) -> HashAlgorithm:
@@ -208,18 +208,18 @@ class KdfFactory:
     """
 
     @classmethod
-    def new(cls, kdf_id: KDF_IDS) -> HkdfSHA256 | HkdfSHA384 | HkdfSHA512:
+    def new(cls, kdf_id: KdfIds) -> HkdfSHA256 | HkdfSHA384 | HkdfSHA512:
         """
         :param kdf_id: KDF id
         :return: return an instance of HkdfSHA256 or HkdfSHA384 or HkdfSHA512
         :rtype: HkdfSHA256 | HkdfSHA384 | HkdfSHA512
         """
         match kdf_id:
-            case KDF_IDS.HKDF_SHA256:
+            case KdfIds.HKDF_SHA256:
                 return HkdfSHA256()
-            case KDF_IDS.HKDF_SHA384:
+            case KdfIds.HKDF_SHA384:
                 return HkdfSHA384()
-            case KDF_IDS.HKDF_SHA512:
+            case KdfIds.HKDF_SHA512:
                 return HkdfSHA512()
             case _:
                 raise NotImplementedError

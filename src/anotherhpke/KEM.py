@@ -9,18 +9,18 @@ from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448P
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from .KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
-from .constants import KEM_IDS
+from .constants import KemIds
 from .utilities import concat, I2OSP, OS2IP
 
 
 class AbstractKEM(ABC):
     @property
     @abstractmethod
-    def id(self) -> KEM_IDS:
+    def id(self) -> KemIds:
         """
         The KEM id.
         :return: KEM id
-        :rtype: KEM_IDS
+        :rtype: KemIds
         """
         raise NotImplementedError
 
@@ -147,7 +147,7 @@ class AbstractKEM(ABC):
         """
         extract key from dh and expand to the `Nsecret` length
 
-        :param a shared key
+        :param dh: a shared key
         :param kem_context: the context, merely a concatenation of ephemeral public key and recipient public key
         :return: shared secret
         """
@@ -360,11 +360,11 @@ class DhKemP256HkdfSha256(EcAbstractKem):
         return 0xff
 
     @property
-    def id(self) -> KEM_IDS:
+    def id(self) -> KemIds:
         """
-        :rtype: KEM_IDS
+        :rtype: KemIds
         """
-        return KEM_IDS.DHKEM_P_256_HKDF_SHA256
+        return KemIds.DHKEM_P_256_HKDF_SHA256
 
     @property
     def _KDF(self) -> AbstractHkdf:
@@ -419,11 +419,11 @@ class DhKemP384HkdfSha384(EcAbstractKem):
         return 0xff
 
     @property
-    def id(self) -> KEM_IDS:
+    def id(self) -> KemIds:
         """
-        :rtype: KEM_IDS
+        :rtype: KemIds
         """
-        return KEM_IDS.DHKEM_P_384_HKDF_SHA384
+        return KemIds.DHKEM_P_384_HKDF_SHA384
 
     @property
     def _KDF(self) -> AbstractHkdf:
@@ -478,11 +478,11 @@ class DhKemP521HkdfSha512(EcAbstractKem):
         return 0x01
 
     @property
-    def id(self) -> KEM_IDS:
+    def id(self) -> KemIds:
         """
-        :rtype: KEM_IDS
+        :rtype: KemIds
         """
-        return KEM_IDS.DHKEM_P_521_HKDF_SHA512
+        return KemIds.DHKEM_P_521_HKDF_SHA512
 
     @property
     def _KDF(self) -> AbstractHkdf:
@@ -576,11 +576,11 @@ class DhKemX25519HkdfSha256(XEcAbstractKem):
         return X25519PrivateKey
 
     @property
-    def id(self) -> KEM_IDS:
+    def id(self) -> KemIds:
         """
-        :rtype: KEM_IDS
+        :rtype: KemIds
         """
-        return KEM_IDS.DHKEM_X25519_HKDF_SHA256
+        return KemIds.DHKEM_X25519_HKDF_SHA256
 
     @property
     def _KDF(self) -> AbstractHkdf:
@@ -620,11 +620,11 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
         return X448PrivateKey
 
     @property
-    def id(self) -> KEM_IDS:
+    def id(self) -> KemIds:
         """
-        :rtype: KEM_IDS
+        :rtype: KemIds
         """
-        return KEM_IDS.DHKEM_X448_HKDF_SHA512
+        return KemIds.DHKEM_X448_HKDF_SHA512
 
     @property
     def _KDF(self) -> AbstractHkdf:
@@ -662,7 +662,7 @@ class KemFactory:
 
     @classmethod
     def new(cls,
-            kem_id: KEM_IDS) -> DhKemP256HkdfSha256 | DhKemP384HkdfSha384 | DhKemP521HkdfSha512 | DhKemX25519HkdfSha256 | DhKemX448HkdfSha512:
+            kem_id: KemIds) -> DhKemP256HkdfSha256 | DhKemP384HkdfSha384 | DhKemP521HkdfSha512 | DhKemX25519HkdfSha256 | DhKemX448HkdfSha512:
         """
         :param kem_id: KEM id
         :return: return an instance of DhKemP256HkdfSha256 or DhKemP384HkdfSha384 or DhKemP521HkdfSha512 or
@@ -670,15 +670,15 @@ class KemFactory:
         :rtype: DhKemP256HkdfSha256 | DhKemP384HkdfSha384 | DhKemP521HkdfSha512 | DhKemX25519HkdfSha256 | DhKemX448HkdfSha512
         """
         match kem_id:
-            case KEM_IDS.DHKEM_P_256_HKDF_SHA256:
+            case KemIds.DHKEM_P_256_HKDF_SHA256:
                 return DhKemP256HkdfSha256()
-            case KEM_IDS.DHKEM_P_384_HKDF_SHA384:
+            case KemIds.DHKEM_P_384_HKDF_SHA384:
                 return DhKemP384HkdfSha384()
-            case KEM_IDS.DHKEM_P_521_HKDF_SHA512:
+            case KemIds.DHKEM_P_521_HKDF_SHA512:
                 return DhKemP521HkdfSha512()
-            case KEM_IDS.DHKEM_X25519_HKDF_SHA256:
+            case KemIds.DHKEM_X25519_HKDF_SHA256:
                 return DhKemX25519HkdfSha256()
-            case KEM_IDS.DHKEM_X448_HKDF_SHA512:
+            case KemIds.DHKEM_X448_HKDF_SHA512:
                 return DhKemX448HkdfSha512()
             case _:
                 raise NotImplementedError

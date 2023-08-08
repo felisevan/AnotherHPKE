@@ -3,7 +3,7 @@ from cryptography.hazmat.primitives.asymmetric.types import PublicKeyTypes, Priv
 from .AEAD import AeadFactory, AbstractAead
 from .KDF import KdfFactory, AbstractHkdf
 from .KEM import KemFactory
-from .constants import MODE_IDS, KEM_IDS, KDF_IDS, AEAD_IDS
+from .constants import ModeIds, KemIds, KdfIds, AeadIds
 from .utilities import concat, I2OSP, xor_bytes
 
 
@@ -31,7 +31,7 @@ class AbstractContext:
         self._seq = seq
         self._base_nonce = base_nonce
 
-    def seal(self, pt: bytes, aad: bytes=b"") -> bytes:
+    def seal(self, pt: bytes, aad: bytes = b"") -> bytes:
         """
         encrypt a plaintext with associated data aad in sender's context
         :param aad: aad value
@@ -43,7 +43,7 @@ class AbstractContext:
         self._increment_seq()
         return cipher
 
-    def open(self, ct: bytes, aad: bytes=b"") -> bytes:
+    def open(self, ct: bytes, aad: bytes = b"") -> bytes:
         """
         decrypt a ciphertext ct with associated data aad in recipient's context
         :param aad: aad value
@@ -65,7 +65,7 @@ class AbstractContext:
         """
         return self._kdf.labeled_expand(self._exporter_secret, b"sec", exporter_content, L, suite_id=self._suite_id)
 
-    def _compute_nonce(self, seq: bytes) -> bytes:
+    def _compute_nonce(self, seq: int) -> bytes:
         """
         compute next nonce
         :param seq: sequence value
@@ -133,7 +133,7 @@ class ContextRecipient(AbstractContext):
 
 
 class ContextFactory:
-    def __init__(self, kem: KEM_IDS, kdf: KDF_IDS, aead: AEAD_IDS):
+    def __init__(self, kem: KemIds, kdf: KdfIds, aead: AeadIds):
         self.suite_id = concat(
             b"HPKE",
             I2OSP(kem, 2),
@@ -146,7 +146,7 @@ class ContextFactory:
         self.kem = KemFactory.new(kem)
         self.kdf = KdfFactory.new(kdf)
 
-    def _verify_psk_inputs(self, mode: MODE_IDS, psk: bytes, psk_id: bytes):
+    def _verify_psk_inputs(self, mode: ModeIds, psk: bytes, psk_id: bytes):
         """
         verify psk inputs
 
@@ -160,12 +160,12 @@ class ContextFactory:
         if got_psk != got_psk_id:
             raise ValueError("Inconsistent PSK inputs")
 
-        if got_psk and (mode in [MODE_IDS.MODE_BASE, MODE_IDS.MODE_AUTH]):
+        if got_psk and (mode in [ModeIds.MODE_BASE, ModeIds.MODE_AUTH]):
             raise ValueError("PSK input provided when not needed")
-        if (not got_psk) and (mode in [MODE_IDS.MODE_PSK, MODE_IDS.MODE_AUTH_PSK]):
+        if (not got_psk) and (mode in [ModeIds.MODE_PSK, ModeIds.MODE_AUTH_PSK]):
             raise ValueError("Missing required PSK input")
 
-    def _key_schedule(self, mode: MODE_IDS, shared_secret: bytes, info: bytes | None, psk: bytes, psk_id: bytes,
+    def _key_schedule(self, mode: ModeIds, shared_secret: bytes, info: bytes | None, psk: bytes, psk_id: bytes,
                       role: str) -> AbstractContext:
         self._verify_psk_inputs(mode, psk, psk_id)
 
@@ -212,25 +212,25 @@ class ContextFactory:
         else:
             raise NotImplementedError("A new role")
 
-    def key_schedule_sender(self, mode: MODE_IDS, shared_secret: bytes, info: bytes | None, psk: bytes, psk_id: bytes):
+    def key_schedule_sender(self, mode: ModeIds, shared_secret: bytes, info: bytes | None, psk: bytes, psk_id: bytes):
         return self._key_schedule(mode, shared_secret, info, psk, psk_id, "sender")
 
-    def key_schedule_recipient(self, mode: MODE_IDS, shared_secret: bytes, info: bytes | None, psk: bytes,
+    def key_schedule_recipient(self, mode: ModeIds, shared_secret: bytes, info: bytes | None, psk: bytes,
                                psk_id: bytes):
         return self._key_schedule(mode, shared_secret, info, psk, psk_id, "recipient")
 
-    def key_schedule_exporter(self, mode: MODE_IDS, shared_secret: bytes, info: bytes | None, psk: bytes,
+    def key_schedule_exporter(self, mode: ModeIds, shared_secret: bytes, info: bytes | None, psk: bytes,
                               psk_id: bytes):
         return self._key_schedule(mode, shared_secret, info, psk, psk_id, "exporter")
 
     def SetupBaseS(self, pkR: PublicKeyTypes, info: bytes | None = None, skE: bytes = None, pkE: bytes = None):
         shared_secret, enc = self.kem.encap(pkR, skE, pkE)
-        return enc, self.key_schedule_sender(MODE_IDS.MODE_BASE, shared_secret, info,
+        return enc, self.key_schedule_sender(ModeIds.MODE_BASE, shared_secret, info,
                                              self._default_psk, self._default_psk_id)
 
     def SetupBaseR(self, enc: bytes, skR: PrivateKeyTypes, info: bytes | None = None):
         shared_secret = self.kem.decap(enc, skR)
-        return self.key_schedule_recipient(MODE_IDS.MODE_BASE, shared_secret, info,
+        return self.key_schedule_recipient(ModeIds.MODE_BASE, shared_secret, info,
                                            self._default_psk, self._default_psk_id)
 
     def SetupPSKS(self, pkR: PublicKeyTypes, psk: bytes, psk_id: bytes, info: bytes | None = None, skE: bytes = None,
@@ -238,24 +238,24 @@ class ContextFactory:
         if len(psk) < 32:
             raise ValueError("psk doesn't have sufficient length")
         shared_secret, enc = self.kem.encap(pkR, skE, pkE)
-        return enc, self.key_schedule_sender(MODE_IDS.MODE_PSK, shared_secret, info,
+        return enc, self.key_schedule_sender(ModeIds.MODE_PSK, shared_secret, info,
                                              psk, psk_id)
 
     def SetupPSKR(self, enc: bytes, skR: PrivateKeyTypes, psk: bytes, psk_id: bytes, info: bytes | None = None):
         if len(psk) < 32:
             raise ValueError("psk doesn't have sufficient length")
         shared_secret = self.kem.decap(enc, skR)
-        return self.key_schedule_recipient(MODE_IDS.MODE_PSK, shared_secret, info, psk, psk_id)
+        return self.key_schedule_recipient(ModeIds.MODE_PSK, shared_secret, info, psk, psk_id)
 
     def SetupAuthS(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, info: bytes | None = None, skE: bytes = None,
                    pkE: bytes = None):
         shared_secret, enc = self.kem.auth_encap(pkR, skS, skE, pkE)
-        return enc, self.key_schedule_sender(MODE_IDS.MODE_AUTH, shared_secret, info,
+        return enc, self.key_schedule_sender(ModeIds.MODE_AUTH, shared_secret, info,
                                              self._default_psk, self._default_psk_id)
 
     def SetupAuthR(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes, info: bytes | None = None):
         shared_secret = self.kem.auth_decap(enc, skR, pkS)
-        return self.key_schedule_recipient(MODE_IDS.MODE_AUTH, shared_secret, info,
+        return self.key_schedule_recipient(ModeIds.MODE_AUTH, shared_secret, info,
                                            self._default_psk, self._default_psk_id)
 
     def SetupAuthPSKS(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, psk: bytes, psk_id: bytes,
@@ -263,7 +263,7 @@ class ContextFactory:
         if len(psk) < 32:
             raise ValueError("psk doesn't have sufficient length")
         shared_secret, enc = self.kem.auth_encap(pkR, skS, skE, pkE)
-        return enc, self.key_schedule_sender(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
+        return enc, self.key_schedule_sender(ModeIds.MODE_AUTH_PSK, shared_secret, info,
                                              psk, psk_id)
 
     def SetupAuthPSKR(self, enc: bytes, pkS: PublicKeyTypes, skR: PrivateKeyTypes, psk: bytes, psk_id: bytes,
@@ -271,5 +271,5 @@ class ContextFactory:
         if len(psk) < 32:
             raise ValueError("psk doesn't have sufficient length")
         shared_secret = self.kem.auth_decap(enc, skR, pkS)
-        return self.key_schedule_recipient(MODE_IDS.MODE_AUTH_PSK, shared_secret, info,
+        return self.key_schedule_recipient(ModeIds.MODE_AUTH_PSK, shared_secret, info,
                                            psk, psk_id)
