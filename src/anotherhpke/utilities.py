@@ -39,6 +39,7 @@ def xor_bytes(a: bytes, b: bytes) -> bytes:
     :param b: byte string b
     :return:  byte string after XOR computing
     :rtype: bytes
+    :raise ValueError: When input lengths of two input variables mismatched, it raises.
     """
     if len(a) != len(b):
         raise ValueError("the length of two bytes must be same")
