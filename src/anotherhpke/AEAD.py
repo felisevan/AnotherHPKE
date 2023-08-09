@@ -16,7 +16,6 @@ class AbstractAead(ABC):
     def id(self) -> AeadIds:
         """
         the AEAD id
-        :rtype: AeadIds
         """
         raise NotImplementedError
 
@@ -25,7 +24,6 @@ class AbstractAead(ABC):
     def Nk(self) -> int:
         """
         The length in bytes of a key for this algorithm
-        :rtype: int
         """
         raise NotImplementedError
 
@@ -34,7 +32,6 @@ class AbstractAead(ABC):
     def Nn(self) -> int:
         """
         The length in bytes of a nonce for this algorithm
-        :rtype: int
         """
         raise NotImplementedError
 
@@ -43,7 +40,6 @@ class AbstractAead(ABC):
     def Nt(self) -> int:
         """
         The length in bytes of the authentication tag for this algorithm
-        :rtype: int
         """
         raise NotImplementedError
 
@@ -52,8 +48,6 @@ class AbstractAead(ABC):
     def _algorithm(self) -> Callable:
         """
         The underlying AEAD cipher.
-        :return: specific AEAD cipher in use
-        :rtype: Callable
         """
         raise NotImplementedError
 
@@ -66,7 +60,6 @@ class AbstractAead(ABC):
         :param aad: associated data
         :param pt: plaintext
         :return: ciphertext
-        :rtype: bytes
         """
 
         cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
@@ -81,7 +74,6 @@ class AbstractAead(ABC):
         :param aad: associated data
         :param ct: ciphertext
         :return: plaintext
-        :rtype: bytes
         """
         cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
         return cipher.decrypt(nonce=nonce, data=ct, associated_data=aad)
@@ -94,37 +86,22 @@ class AeadAes256Gcm(AbstractAead):
 
     @property
     def id(self) -> AeadIds:
-        """
-        :rtype: AeadIds
-        """
         return AeadIds.AES_256_GCM
 
     @property
     def Nk(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
     @property
     def Nn(self) -> int:
-        """
-        :rtype: int
-        """
         return 12
 
     @property
     def Nt(self) -> int:
-        """
-        :rtype: int
-        """
         return 16
 
     @property
     def _algorithm(self) -> Callable:
-        """
-        :rtype: Callable
-        """
         return AESGCM
 
 
@@ -135,37 +112,22 @@ class AeadAes128Gcm(AbstractAead):
 
     @property
     def id(self) -> AeadIds:
-        """
-        :rtype: AeadIds
-        """
         return AeadIds.AES_128_GCM
 
     @property
     def Nk(self) -> int:
-        """
-        :rtype: int
-        """
         return 16
 
     @property
     def Nn(self) -> int:
-        """
-        :rtype: int
-        """
         return 12
 
     @property
     def Nt(self) -> int:
-        """
-        :rtype: int
-        """
         return 16
 
     @property
     def _algorithm(self) -> Callable:
-        """
-        :rtype: Callable
-        """
         return AESGCM
 
 
@@ -176,38 +138,22 @@ class AeadChaCha20Poly1305(AbstractAead):
 
     @property
     def id(self) -> AeadIds:
-        """
-
-        :rtype: AeadIds
-        """
         return AeadIds.ChaCha20Poly1305
 
     @property
     def Nk(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
     @property
     def Nn(self) -> int:
-        """
-        :rtype: int
-        """
         return 12
 
     @property
     def Nt(self) -> int:
-        """
-        :rtype: int
-        """
         return 16
 
     @property
     def _algorithm(self) -> Callable:
-        """
-        :rtype: Callable
-        """
         return ChaCha20Poly1305
 
 
@@ -218,49 +164,28 @@ class AeadExportOnly(AbstractAead):
 
     @property
     def id(self) -> AeadIds:
-        """
-        :rtype: AeadIds
-        """
         return AeadIds.Export_only
 
     @property
     def Nk(self) -> int:
-        """
-        :rtype: int
-        """
         raise NotImplementedError("Export only")
 
     @property
     def Nn(self) -> int:
-        """
-        :rtype: int
-        """
         raise NotImplementedError("Export only")
 
     @property
     def Nt(self) -> int:
-        """
-        :rtype: int
-        """
         raise NotImplementedError("Export only")
 
     @property
     def _algorithm(self) -> Callable:
-        """
-        :rtype: Callable
-        """
         raise NotImplementedError("Export only")
 
     def seal(self, key: None, nonce: None, aad: None, pt: None) -> None:
-        """
-        :rtype: None
-        """
         raise NotImplementedError("Export only")
 
     def open(self, key: None, nonce: None, aad: None, ct: None) -> None:
-        """
-        :rtype: None
-        """
         raise NotImplementedError("Export only")
 
 
@@ -275,7 +200,6 @@ class AeadFactory:
         return an instance of AeadAes128Gcm or AeadAes256Gcm or AeadChaCha20Poly1305 or AeadExportOnly
         :param aead_id: AEAD id
         :return: an instance
-        :rtype: AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly
         """
         match aead_id:
             case AeadIds.AES_128_GCM:

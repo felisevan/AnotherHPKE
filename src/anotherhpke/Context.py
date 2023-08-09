@@ -21,7 +21,7 @@ class AbstractContext:
         :param key: key called by AEAD
         :param base_nonce: base nonce value
         :param seq: sequence value
-        :param exporter_secret: value returned from labeled_expand
+        :param exporter_secret: the value returned from labeled_expand
         """
         self._suite_id = suite_id
         self._kdf = kdf
@@ -37,7 +37,6 @@ class AbstractContext:
         :param aad: aad value
         :param pt: plaintext value
         :return: ciphertext
-        :rtype: bytes
         """
         cipher = self._aead.seal(self._key, self._compute_nonce(self._seq), aad, pt)
         self._increment_seq()
@@ -49,19 +48,17 @@ class AbstractContext:
         :param aad: aad value
         :param ct: ciphertext value
         :return: plaintext
-        :rtype: bytes
         """
         cipher = self._aead.open(self._key, self._compute_nonce(self._seq), aad, ct)
         self._increment_seq()
         return cipher
 
-    def export(self, exporter_content: bytes, L: bytes) -> bytes:
+    def export(self, exporter_content: bytes, L: int) -> bytes:
         """
         HPKE interface exporting secrets
         :param exporter_content: value returned from labeled_expand
         :param L: length
         :return: secret
-        :rtype: bytes
         """
         return self._kdf.labeled_expand(self._exporter_secret, b"sec", exporter_content, L, suite_id=self._suite_id)
 
@@ -70,7 +67,6 @@ class AbstractContext:
         compute next nonce
         :param seq: sequence value
         :return: next nonce
-        :rtype: bytes
         """
         seq_bytes = I2OSP(seq, self._aead.Nn)
         return xor_bytes(self._base_nonce, seq_bytes)
@@ -78,7 +74,6 @@ class AbstractContext:
     def _increment_seq(self) -> None:
         """
         increase sequence value after each execution
-        :rtype: None
         """
         if self._seq >= (1 << (8 * self._aead.Nn)) - 1:
             raise RuntimeError("Message limit reached")
@@ -96,15 +91,9 @@ class ContextExportOnly(AbstractContext):
         self._key = exporter_secret
 
     def seal(self, pt, aad=b"") -> bytes:
-        """
-        :rtype: bytes
-        """
         raise NotImplementedError("Invalid in export-only")
 
     def open(self, ct, aad=b"") -> bytes:
-        """
-        :rtype: bytes
-        """
         raise NotImplementedError("Invalid in export-only")
 
 
@@ -114,9 +103,6 @@ class ContextSender(AbstractContext):
     """
 
     def open(self, ct, aad=b"") -> bytes:
-        """
-        :rtype: bytes
-        """
         raise NotImplementedError("Invalid in sender")
 
 
@@ -126,9 +112,6 @@ class ContextRecipient(AbstractContext):
     """
 
     def seal(self, pt, aad=b"") -> bytes:
-        """
-        :rtype: bytes
-        """
         raise NotImplementedError("Invalid in recipient")
 
 
