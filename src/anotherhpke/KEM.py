@@ -19,8 +19,6 @@ class AbstractKEM(ABC):
     def id(self) -> KemIds:
         """
         The KEM id.
-        :return: KEM id
-        :rtype: KemIds
         """
         raise NotImplementedError
 
@@ -29,8 +27,6 @@ class AbstractKEM(ABC):
     def _KDF(self) -> AbstractHkdf:
         """
         The specific KDF.
-        :return: KDF
-        :rtype: AbstractHkdf
         """
         raise NotImplementedError
 
@@ -39,9 +35,6 @@ class AbstractKEM(ABC):
     def _Nsecret(self) -> int:
         """
         The length in bytes of a KEM shared secret produced by the algorithm
-
-        :return: the length
-        :rtype: int
         """
         raise NotImplementedError
 
@@ -50,9 +43,6 @@ class AbstractKEM(ABC):
     def _Nsk(self) -> int:
         """
         The length in bytes of an encoded private key for the algorithm
-
-        :return: the length
-        :rtype: int
         """
         raise NotImplementedError
 
@@ -61,9 +51,6 @@ class AbstractKEM(ABC):
     def _Npk(self) -> int:
         """
         The length in bytes of an encoded public key for the algorithm
-
-        :return: the length
-        :rtype: int
         """
 
         raise NotImplementedError
@@ -72,9 +59,6 @@ class AbstractKEM(ABC):
     def _suite_id(self) -> bytes:
         """
         The specific suite id
-
-        :return: suite id
-        :rtype: bytes
         """
         return concat(b"KEM", I2OSP(self.id, 2))
 
@@ -84,7 +68,6 @@ class AbstractKEM(ABC):
         Randomized algorithm to generate a key pair
 
         :return: a key pair
-        :rtype: tuple[PrivateKeyTypes, PublicKeyTypes]
         """
         raise NotImplementedError
 
@@ -95,7 +78,6 @@ class AbstractKEM(ABC):
 
         :param ikm: input key material
         :return: a key pair
-        :rtype: tuple[PrivateKeyTypes, PublicKeyTypes]
         """
         raise NotImplementedError
 
@@ -106,7 +88,6 @@ class AbstractKEM(ABC):
 
         :param pkX: public key instance
         :return: serialized form of public key
-        :rtype: bytes
         """
         raise NotImplementedError
 
@@ -117,7 +98,6 @@ class AbstractKEM(ABC):
 
         :param pkXm: serialized form of public key.
         :return: public key instance
-        :rtype: PublicKeyTypes
         """
         raise NotImplementedError
 
@@ -128,7 +108,6 @@ class AbstractKEM(ABC):
 
         :param skX: private key instance
         :return: serialized form of private key
-        :rtype: bytes
         """
         raise NotImplementedError
 
@@ -139,7 +118,6 @@ class AbstractKEM(ABC):
 
         :param skXm: serialized form of private key.
         :return: private key instance
-        :rtype: PrivateKeyTypes
         """
         raise NotImplementedError
 
@@ -176,7 +154,6 @@ class AbstractKEM(ABC):
         :param skE: the ephemeral private key ( ONLY for debug purpose )
         :param pkE: the ephemeral public key ( ONLY for debug purpose )
         :return: a tuple consists of shared secret and ephemeral public key that used in recipient decryption
-        :rtype: tuple[bytes, bytes]
         """
         if (not skE) and (not pkE):
             skE, pkE = self.generate_key_pair()
@@ -202,7 +179,6 @@ class AbstractKEM(ABC):
         :param enc: ephemeral public key
         :param skR: the secret key of recipient
         :return: shared secret
-        :rtype: bytes
         """
         pkE = self.deserialize_public_key(enc)
         dh = skR.exchange(pkE)
@@ -223,7 +199,6 @@ class AbstractKEM(ABC):
         :param skE: the ephemeral private key ( ONLY for debug purpose )
         :param pkE: the ephemeral public key ( ONLY for debug purpose )
         :return: a tuple consists of shared secret and ephemeral public key that used in recipient decryption
-        :rtype: tuple[bytes, bytes]
         """
         if (not skE) and (not pkE):
             skE, pkE = self.generate_key_pair()
@@ -250,7 +225,6 @@ class AbstractKEM(ABC):
         :param skR: the secret key of recipient
         :param pkS: the public key of sender
         :return: shared secret
-        :rtype: bytes
         """
         pkE = self.deserialize_public_key(enc)
         dh = concat(skR.exchange(pkE), skR.exchange(pkS))
@@ -340,58 +314,34 @@ class DhKemP256HkdfSha256(EcAbstractKem):
 
     @property
     def _curve(self) -> Type[EllipticCurve]:
-        """
-        :rtype: Type[EllipticCurve]
-        """
         return SECP256R1
 
     @property
     def _order(self) -> int:
-        """
-        :rtype: int
-        """
         return 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
 
     @property
     def _bitmask(self) -> int:
-        """
-        :rtype: int
-        """
         return 0xff
 
     @property
     def id(self) -> KemIds:
-        """
-        :rtype: KemIds
-        """
         return KemIds.DHKEM_P_256_HKDF_SHA256
 
     @property
     def _KDF(self) -> AbstractHkdf:
-        """
-        :rtype: AbstractHkdf
-        """
         return HkdfSHA256()
 
     @property
     def _Nsecret(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
     @property
     def _Nsk(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
     @property
     def _Npk(self) -> int:
-        """
-        :rtype: int
-        """
         return 65
 
 
@@ -399,58 +349,34 @@ class DhKemP384HkdfSha384(EcAbstractKem):
 
     @property
     def _curve(self) -> Type[EllipticCurve]:
-        """
-        :rtype: Type[EllipticCurve]
-        """
         return SECP384R1
 
     @property
     def _order(self) -> int:
-        """
-        :rtype: int
-        """
         return 0xffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973
 
     @property
     def _bitmask(self) -> int:
-        """
-        :rtype: int
-        """
         return 0xff
 
     @property
     def id(self) -> KemIds:
-        """
-        :rtype: KemIds
-        """
         return KemIds.DHKEM_P_384_HKDF_SHA384
 
     @property
     def _KDF(self) -> AbstractHkdf:
-        """
-        :rtype: AbstractHkdf
-        """
         return HkdfSHA384()
 
     @property
     def _Nsecret(self) -> int:
-        """
-        :rtype: int
-        """
         return 48
 
     @property
     def _Nsk(self) -> int:
-        """
-        :rtype: int
-        """
         return 48
 
     @property
     def _Npk(self) -> int:
-        """
-        :rtype: int
-        """
         return 97
 
 
@@ -458,58 +384,34 @@ class DhKemP521HkdfSha512(EcAbstractKem):
 
     @property
     def _curve(self) -> Type[EllipticCurve]:
-        """
-        :rtype: Type[EllipticCurve]
-        """
         return SECP521R1
 
     @property
     def _order(self) -> int:
-        """
-        :rtype: int
-        """
         return 0x01fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa51868783bf2f966b7fcc0148f709a5d03bb5c9b8899c47aebb6fb71e91386409
 
     @property
     def _bitmask(self) -> int:
-        """
-        :rtype: int
-        """
         return 0x01
 
     @property
     def id(self) -> KemIds:
-        """
-        :rtype: KemIds
-        """
         return KemIds.DHKEM_P_521_HKDF_SHA512
 
     @property
     def _KDF(self) -> AbstractHkdf:
-        """
-        :rtype: AbstractHkdf
-        """
         return HkdfSHA512()
 
     @property
     def _Nsecret(self) -> int:
-        """
-        :rtype: int
-        """
         return 64
 
     @property
     def _Nsk(self) -> int:
-        """
-        :rtype: int
-        """
         return 66
 
     @property
     def _Npk(self) -> int:
-        """
-        :rtype: int
-        """
         return 133
 
 
@@ -570,88 +472,52 @@ class XEcAbstractKem(AbstractKEM):
 class DhKemX25519HkdfSha256(XEcAbstractKem):
     @property
     def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
-        """
-        :rtype: Type[X25519PrivateKey | X448PrivateKey]
-        """
         return X25519PrivateKey
 
     @property
     def id(self) -> KemIds:
-        """
-        :rtype: KemIds
-        """
         return KemIds.DHKEM_X25519_HKDF_SHA256
 
     @property
     def _KDF(self) -> AbstractHkdf:
-        """
-        :rtype: AbstractHkdf
-        """
         return HkdfSHA256()
 
     @property
     def _Nsecret(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
     @property
     def _Nsk(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
     @property
     def _Npk(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
 
 class DhKemX448HkdfSha512(XEcAbstractKem):
     @property
     def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
-        """
-        :rtype: Type[X25519PrivateKey | X448PrivateKey]
-        """
         return X448PrivateKey
 
     @property
     def id(self) -> KemIds:
-        """
-        :rtype: KemIds
-        """
         return KemIds.DHKEM_X448_HKDF_SHA512
 
     @property
     def _KDF(self) -> AbstractHkdf:
-        """
-        :rtype: AbstractHkdf
-        """
         return HkdfSHA512()
 
     @property
     def _Nsecret(self) -> int:
-        """
-        :rtype: int
-        """
         return 64
 
     @property
     def _Nsk(self) -> int:
-        """
-        :rtype: int
-        """
         return 56
 
     @property
     def _Npk(self) -> int:
-        """
-        :rtype: int
-        """
         return 56
 
 
@@ -667,7 +533,6 @@ class KemFactory:
         :param kem_id: KEM id
         :return: return an instance of DhKemP256HkdfSha256 or DhKemP384HkdfSha384 or DhKemP521HkdfSha512 or
          DhKemX25519HkdfSha256 or DhKemX448HkdfSha512
-        :rtype: DhKemP256HkdfSha256 | DhKemP384HkdfSha384 | DhKemP521HkdfSha512 | DhKemX25519HkdfSha256 | DhKemX448HkdfSha512
         """
         match kem_id:
             case KemIds.DHKEM_P_256_HKDF_SHA256:

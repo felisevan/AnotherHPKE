@@ -17,8 +17,6 @@ class AbstractHkdf(ABC):
     def id(self) -> KdfIds:
         """
         The KDF id.
-        :return: KDF id
-        :rtype: KdfIds
         """
 
         raise NotImplementedError
@@ -28,8 +26,6 @@ class AbstractHkdf(ABC):
     def _hash(self) -> HashAlgorithm:
         """
         The underlying hash function.
-        :return: specific hash function in use
-        :rtype: HashAlgorithm
         """
 
         raise NotImplementedError
@@ -39,8 +35,6 @@ class AbstractHkdf(ABC):
     def Nh(self) -> int:
         """
         The output size of the extract() methods in bytes.
-        :return: length of input keying material in bytes
-        :rtype: int
         """
 
         raise NotImplementedError
@@ -51,7 +45,6 @@ class AbstractHkdf(ABC):
         :param salt: salt value
         :param ikm: input keying material
         :return: pseudorandom key with Nh bytes.
-        :rtype: bytes
         """
         ctx = hmac.HMAC(salt, self._hash)
         ctx.update(ikm)
@@ -64,7 +57,6 @@ class AbstractHkdf(ABC):
         :param info: optional string
         :param L: length
         :return: keying material with L bytes
-        :rtype: bytes
         """
         assert L <= 255 * self._hash.digest_size
 
@@ -89,7 +81,6 @@ class AbstractHkdf(ABC):
         :param ikm: input keying material
         :param suite_id: suite_id starts with "HPKE" and identify the entire cipher suite in use
         :return: extract result
-        :rtype: bytes
         """
 
         labeled_ikm = concat(b"HPKE-v1", suite_id, label, ikm)
@@ -108,7 +99,6 @@ class AbstractHkdf(ABC):
         :param L: length
         :param suite_id: suite_id starts with "HPKE" and identify the entire cipher suite in use
         :return: expand result
-        :rtype: bytes
         """
 
         info = b"" if info is None else info
@@ -128,23 +118,14 @@ class HkdfSHA256(AbstractHkdf):
 
     @property
     def id(self) -> KdfIds:
-        """
-        :rtype: KdfIds
-        """
         return KdfIds.HKDF_SHA256
 
     @property
     def _hash(self) -> HashAlgorithm:
-        """
-        :rtype: HashAlgorithm
-        """
         return SHA256()
 
     @property
     def Nh(self) -> int:
-        """
-        :rtype: int
-        """
         return 32
 
 
@@ -155,23 +136,14 @@ class HkdfSHA384(AbstractHkdf):
 
     @property
     def id(self) -> KdfIds:
-        """
-        :rtype: KdfIds
-        """
         return KdfIds.HKDF_SHA384
 
     @property
     def _hash(self) -> HashAlgorithm:
-        """
-        :rtype: HashAlgorithm
-        """
         return SHA384()
 
     @property
     def Nh(self) -> int:
-        """
-        :rtype: int
-        """
         return 48
 
 
@@ -182,23 +154,14 @@ class HkdfSHA512(AbstractHkdf):
 
     @property
     def id(self) -> KdfIds:
-        """
-        :rtype: KdfIds
-        """
         return KdfIds.HKDF_SHA512
 
     @property
     def _hash(self) -> HashAlgorithm:
-        """
-        :rtype: HashAlgorithm
-        """
         return SHA512()
 
     @property
     def Nh(self) -> int:
-        """
-        :rtype: int
-        """
         return 64
 
 
@@ -212,7 +175,6 @@ class KdfFactory:
         """
         :param kdf_id: KDF id
         :return: return an instance of HkdfSHA256 or HkdfSHA384 or HkdfSHA512
-        :rtype: HkdfSHA256 | HkdfSHA384 | HkdfSHA512
         """
         match kdf_id:
             case KdfIds.HKDF_SHA256:
