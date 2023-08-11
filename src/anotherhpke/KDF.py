@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from cryptography.hazmat.primitives import hmac
+from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
 from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256, SHA384, SHA512
 
 from .constants import KdfIds
@@ -58,19 +59,7 @@ class AbstractHkdf(ABC):
         :param L: length
         :return: keying material with L bytes
         """
-        assert L <= 255 * self._hash.digest_size
-
-        t_n_minus_1 = b""
-        n = 1
-        data = b""
-
-        while len(data) < L:
-            ctx = hmac.HMAC(prk, self._hash)
-            ctx.update(t_n_minus_1 + info + I2OSP(n, 1))
-            t_n_minus_1 = ctx.finalize()
-            data += t_n_minus_1
-            n += 1
-        return data[:L]
+        return HKDFExpand(self._hash, L, info).derive(prk)
 
     def labeled_extract(self, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes) -> bytes:
         """
@@ -89,7 +78,7 @@ class AbstractHkdf(ABC):
             ikm=labeled_ikm,
         )
 
-    def labeled_expand(self, prk: bytes, label: bytes | None, info: bytes, L: int, suite_id: bytes) -> bytes:
+    def labeled_expand(self, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes) -> bytes:
         """
         Expand a pseudorandom key prk using optional string info into L bytes of output keying material,
         but labeled with `label`
