@@ -30,6 +30,18 @@ class AbstractContext:
         self._exporter_secret = exporter_secret
         self._seq = seq
         self._base_nonce = base_nonce
+        self._seq_ = 0
+
+    @property
+    def _seq(self):
+        return self._seq_
+
+    @_seq.setter
+    def _seq(self, value):
+        if self._seq_ >= (1 << (8 * self._aead.Nn)) - 1:
+            raise RuntimeError("Message limit reached")
+        self._seq_ += value
+
 
     def seal(self, pt: bytes, aad: bytes = b"") -> bytes:
         """
@@ -68,17 +80,7 @@ class AbstractContext:
         :param seq: sequence value
         :return: next nonce
         """
-        seq_bytes = I2OSP(seq, self._aead.Nn)
-        return xor_bytes(self._base_nonce, seq_bytes)
-
-    def _increment_seq(self) -> None:
-        """
-        increase sequence value after each execution
-        """
-        # TODO: rewrite using property.setter
-        if self._seq >= (1 << (8 * self._aead.Nn)) - 1:
-            raise RuntimeError("Message limit reached")
-        self._seq += 1
+        return xor_bytes(self._base_nonce, I2OSP(seq, self._aead.Nn))
 
 
 class ContextExportOnly(AbstractContext):
