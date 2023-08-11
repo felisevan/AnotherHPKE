@@ -34,7 +34,7 @@ class AbstractKEM(ABC):
     @abstractmethod
     def _Nsecret(self) -> int:
         """
-        The length in bytes of a KEM shared secret produced by the algorithm
+        The length in bytes of a KEM shared secret produced by the algorithm.
         """
         raise NotImplementedError
 
@@ -42,7 +42,7 @@ class AbstractKEM(ABC):
     @abstractmethod
     def _Nsk(self) -> int:
         """
-        The length in bytes of an encoded private key for the algorithm
+        The length in bytes of an encoded private key for the algorithm.
         """
         raise NotImplementedError
 
@@ -50,7 +50,7 @@ class AbstractKEM(ABC):
     @abstractmethod
     def _Npk(self) -> int:
         """
-        The length in bytes of an encoded public key for the algorithm
+        The length in bytes of an encoded public key for the algorithm.
         """
 
         raise NotImplementedError
@@ -58,76 +58,76 @@ class AbstractKEM(ABC):
     @property
     def _suite_id(self) -> bytes:
         """
-        The specific suite id
+        The specific suite id.
         """
         return concat(b"KEM", I2OSP(self.id, 2))
 
     @abstractmethod
     def generate_key_pair(self) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         """
-        Randomized algorithm to generate a key pair
+        Generate a valid key pair.
 
-        :return: a key pair
+        :return: A `(private key, public key)` pair.
         """
         raise NotImplementedError
 
     @abstractmethod
     def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
         """
-        Deterministic algorithm to derive a key pair from the input key material `ikm`
+        Deterministic algorithm to derive a key pair from the input key material `ikm`.
 
-        :param ikm: input key material
-        :return: a key pair
+        :param ikm: An input key material.
+        :return: A `(private key, public key)` pair.
         """
         raise NotImplementedError
 
     @abstractmethod
     def serialize_public_key(self, pkX: PublicKeyTypes) -> bytes:
         """
-        Produce a byte string of length `Npk` encoding the private key `pkX`
+        Produce a byte string of length `Npk` encoding the private key `pkX`.
 
-        :param pkX: public key instance
-        :return: serialized form of public key
+        :param pkX: A public key instance.
+        :return: The serialized form of public key
         """
         raise NotImplementedError
 
     @abstractmethod
     def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
         """
-         Parse a byte string of length `Npk` to recover a public key
+         Parse a byte string of length `Npk` to recover a public key.
 
-        :param pkXm: serialized form of public key.
-        :return: public key instance
+        :param pkXm: A serialized form of public key.
+        :return: The public key instance.
         """
         raise NotImplementedError
 
     @abstractmethod
     def serialize_private_key(self, skX: PrivateKeyTypes) -> bytes:
         """
-        Produce a byte string of length `Nsk` encoding the private key `skX`
+        Produce a byte string of length `Nsk` encoding the private key `skX`.
 
-        :param skX: private key instance
-        :return: serialized form of private key
+        :param skX: A private key instance.
+        :return: The serialized form of private key.
         """
         raise NotImplementedError
 
     @abstractmethod
     def deserialize_private_key(self, skXm: bytes) -> PrivateKeyTypes:
         """
-         Parse a byte string of length `Nsk` to recover a private key
+         Parse a byte string of length `Nsk` to recover a private key.
 
-        :param skXm: serialized form of private key.
-        :return: private key instance
+        :param skXm: A serialized form of private key.
+        :return: The private key instance.
         """
         raise NotImplementedError
 
     def extract_and_expand(self, dh: bytes, kem_context: bytes) -> bytes:
         """
-        extract key from dh and expand to the `Nsecret` length
+        Extract key from dh and expand to the `Nsecret` length.
 
-        :param dh: a shared key
-        :param kem_context: the context, merely a concatenation of ephemeral public key and recipient public key
-        :return: shared secret
+        :param dh: A shared key.
+        :param kem_context: The context, merely a concatenation of ephemeral public key and recipient public key.
+        :return: shared secret.
         """
         eae_prk = self._KDF.labeled_extract(
             salt=b"",
@@ -150,10 +150,10 @@ class AbstractKEM(ABC):
          and a fixed-length encapsulation of that key that can be decapsulated by the holder of the private key
           corresponding to pkR.
 
-        :param pkR: the public key of recipient
-        :param skE: the ephemeral private key ( ONLY for debug purpose )
-        :param pkE: the ephemeral public key ( ONLY for debug purpose )
-        :return: a tuple consists of shared secret and ephemeral public key that used in recipient decryption
+        :param pkR: The public key of recipient.
+        :param skE: The ephemeral private key ( ONLY for debug purpose ).
+        :param pkE: The ephemeral public key ( ONLY for debug purpose ).
+        :return: A tuple consists of shared secret and ephemeral public key that used in recipient decryption.
         """
         if (not skE) and (not pkE):
             skE, pkE = self.generate_key_pair()
@@ -176,9 +176,9 @@ class AbstractKEM(ABC):
         Deterministic algorithm using the private key skR to recover the ephemeral symmetric key (the KEM shared secret)
          from its encapsulated representation enc.
 
-        :param enc: ephemeral public key
-        :param skR: the secret key of recipient
-        :return: shared secret
+        :param enc: The ephemeral public key.
+        :param skR: The secret key of recipient.
+        :return: Generated shared secret.
         """
         pkE = self.deserialize_public_key(enc)
         dh = skR.exchange(pkE)
@@ -192,13 +192,14 @@ class AbstractKEM(ABC):
     def auth_encap(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, skE: bytes = None, pkE: bytes = None) -> tuple[
         bytes, bytes]:
         """
-         Same as Encap(), and the outputs encode an assurance that the KEM shared secret was generated by the holder of the private key `skS`
+         Same as Encap(), and the outputs encode an assurance that the KEM shared secret was generated by
+          the holder of the private key `skS`.
 
-        :param pkR: the public key of recipient
-        :param skS: the secret key of sender
-        :param skE: the ephemeral private key ( ONLY for debug purpose )
-        :param pkE: the ephemeral public key ( ONLY for debug purpose )
-        :return: a tuple consists of shared secret and ephemeral public key that used in recipient decryption
+        :param pkR: The public key of recipient.
+        :param skS: The secret key of sender.
+        :param skE: The ephemeral private key ( ONLY for debug purpose ).
+        :param pkE: The ephemeral public key ( ONLY for debug purpose ).
+        :return: A tuple consists of shared secret and ephemeral public key that used in recipient decryption.
         """
         if (not skE) and (not pkE):
             skE, pkE = self.generate_key_pair()
@@ -219,12 +220,13 @@ class AbstractKEM(ABC):
 
     def auth_decap(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes) -> bytes:
         """
-         Same as Decap(), and the recipient is assured that the KEM shared secret was generated by the holder of the private key `skS`.
+         Same as Decap(), and the recipient is assured that the KEM shared secret was generated by the holder of
+          the private key `skS`.
 
-        :param enc: ephemeral public key
-        :param skR: the secret key of recipient
-        :param pkS: the public key of sender
-        :return: shared secret
+        :param enc: The ephemeral public key.
+        :param skR: The secret key of recipient.
+        :param pkS: The public key of sender.
+        :return: Created shared secret.
         """
         pkE = self.deserialize_public_key(enc)
         dh = concat(skR.exchange(pkE), skR.exchange(pkS))
@@ -530,9 +532,10 @@ class KemFactory:
     def new(cls,
             kem_id: KemIds) -> DhKemP256HkdfSha256 | DhKemP384HkdfSha384 | DhKemP521HkdfSha512 | DhKemX25519HkdfSha256 | DhKemX448HkdfSha512:
         """
-        :param kem_id: KEM id
-        :return: return an instance of DhKemP256HkdfSha256 or DhKemP384HkdfSha384 or DhKemP521HkdfSha512 or
-         DhKemX25519HkdfSha256 or DhKemX448HkdfSha512
+        Create an instance of corresponding KEM.
+
+        :param kem_id: KEM id.
+        :return: An instance of KEM.
         """
         match kem_id:
             case KemIds.DHKEM_P_256_HKDF_SHA256:
