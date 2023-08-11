@@ -42,20 +42,19 @@ This project simply uses **_python3_** with package **_cryptography_**.
 # Usage
 
 ```python
-from anotherhpke import Context, constants
+from src.anotherhpke import Ciphersuite, KemIds, KdfIds, AeadIds
 import os
 
-ctx_factory = Context.ContextFactory(constants.KemIds.DHKEM_X25519_HKDF_SHA256, constants.KdfIds.HKDF_SHA256,
-                                     constants.AeadIds.ChaCha20Poly1305)
-sender_pri, sender_pub = ctx_factory.kem.derive_key_pair(os.urandom(32))
-recipient_pri, recipient_pub = ctx_factory.kem.derive_key_pair(os.urandom(32))
+ciphersuite = Ciphersuite(KemIds.DHKEM_X25519_HKDF_SHA256, KdfIds.HKDF_SHA256, AeadIds.ChaCha20Poly1305)
+sender_pri, sender_pub = ciphersuite.kem.derive_key_pair(os.urandom(32))
+recipient_pri, recipient_pub = ciphersuite.kem.derive_key_pair(os.urandom(32))
 
 # Sender side
-enc, ctx = ctx_factory.SetupBaseS(recipient_pub)
+enc, ctx = ciphersuite.SetupBaseS(recipient_pub)
 encrypted = ctx.seal(b"plain text")
 
 # Recipient side
-ctx = ctx_factory.SetupBaseR(enc, recipient_pri)
+ctx = ciphersuite.SetupBaseR(enc, recipient_pri)
 decrypted = ctx.open(encrypted)
 ```
 
