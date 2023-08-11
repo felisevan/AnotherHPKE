@@ -174,7 +174,6 @@ class ContextFactory:
                 aead=self.aead,
                 key=key,
                 base_nonce=base_nonce,
-                seq=0,
                 exporter_secret=exporter_secret
             )
         elif role == "recipient":
@@ -184,7 +183,6 @@ class ContextFactory:
                 aead=self.aead,
                 key=key,
                 base_nonce=base_nonce,
-                seq=0,
                 exporter_secret=exporter_secret
             )
         elif role == "exporter":
