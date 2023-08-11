@@ -75,6 +75,7 @@ class AbstractContext:
         """
         increase sequence value after each execution
         """
+        # TODO: rewrite using property.setter
         if self._seq >= (1 << (8 * self._aead.Nn)) - 1:
             raise RuntimeError("Message limit reached")
         self._seq += 1
