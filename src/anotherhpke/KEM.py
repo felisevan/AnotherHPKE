@@ -276,7 +276,7 @@ class EcAbstractKem(AbstractKEM):
             _bytes = bytearray(self._KDF.labeled_expand(
                 prk=dkp_prk,
                 label=b"candidate",
-                info=I2OSP(0, 1),
+                info=I2OSP(counter, 1),
                 L=self._Nsk,
                 suite_id=self._suite_id
             ))
