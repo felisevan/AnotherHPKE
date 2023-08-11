@@ -12,7 +12,7 @@ class AbstractContext:
     Abstract class of KDF with defining methods.
     """
 
-    def __init__(self, suite_id: bytes, kdf: AbstractHkdf, aead: AbstractAead, key: bytes, base_nonce: bytes, seq: int,
+    def __init__(self, suite_id: bytes, kdf: AbstractHkdf, aead: AbstractAead, key: bytes, base_nonce: bytes,
                  exporter_secret: bytes):
         """
         :param suite_id: suite id value
@@ -20,7 +20,6 @@ class AbstractContext:
         :param aead: specific AEAD type
         :param key: key called by AEAD
         :param base_nonce: base nonce value
-        :param seq: sequence value
         :param exporter_secret: the value returned from labeled_expand
         """
         self._suite_id = suite_id
@@ -28,7 +27,6 @@ class AbstractContext:
         self._aead = aead
         self._key = key
         self._exporter_secret = exporter_secret
-        self._seq = seq
         self._base_nonce = base_nonce
         self._seq_ = 0
 
@@ -51,7 +49,7 @@ class AbstractContext:
         :return: ciphertext
         """
         cipher = self._aead.seal(self._key, self._compute_nonce(self._seq), aad, pt)
-        self._increment_seq()
+        self._seq += 1
         return cipher
 
     def open(self, ct: bytes, aad: bytes = b"") -> bytes:
@@ -62,7 +60,7 @@ class AbstractContext:
         :return: plaintext
         """
         cipher = self._aead.open(self._key, self._compute_nonce(self._seq), aad, ct)
-        self._increment_seq()
+        self._seq += 1
         return cipher
 
     def export(self, exporter_content: bytes, L: int) -> bytes:
