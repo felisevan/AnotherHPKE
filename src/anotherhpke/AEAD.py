@@ -8,14 +8,14 @@ from .constants import AeadIds
 
 class AbstractAead(ABC):
     """
-    Abstract class of AEAD with declaring  methods.
+    Abstract class of AEAD with declaring methods.
     """
 
     @property
     @abstractmethod
     def id(self) -> AeadIds:
         """
-        the AEAD id
+        The AEAD id.
         """
         raise NotImplementedError
 
@@ -23,7 +23,7 @@ class AbstractAead(ABC):
     @abstractmethod
     def Nk(self) -> int:
         """
-        The length in bytes of a key for this algorithm
+        The length in bytes of a key for this algorithm.
         """
         raise NotImplementedError
 
@@ -31,7 +31,7 @@ class AbstractAead(ABC):
     @abstractmethod
     def Nn(self) -> int:
         """
-        The length in bytes of a nonce for this algorithm
+        The length in bytes of a nonce for this algorithm.
         """
         raise NotImplementedError
 
@@ -39,7 +39,7 @@ class AbstractAead(ABC):
     @abstractmethod
     def Nt(self) -> int:
         """
-        The length in bytes of the authentication tag for this algorithm
+        The length in bytes of the authentication tag for this algorithm.
         """
         raise NotImplementedError
 
@@ -53,37 +53,33 @@ class AbstractAead(ABC):
 
     def seal(self, key: bytes, nonce: bytes, aad: bytes | None, pt: bytes) -> bytes:
         """
-        Encrypt plaintext `pt` and authenticate optional associated data `aad` using symmetric key and nonce,
-        returning ciphertext `ct`.
-        :param key: symmetric key
-        :param nonce: nonce value
-        :param aad: associated data
-        :param pt: plaintext
-        :return: ciphertext
+        Encrypts plaintext `pt` and authenticates optional associated data `aad` using `key` and `nonce`.
+
+        :param key: A symmetric key.
+        :param nonce: A nonce value.
+        :param aad: Additional data that should be authenticated with the key, but does not need to be encrypted.
+        :param pt: A Plaintext.
+        :return: The ciphertext.
         """
 
-        cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
+        cipher = self._algorithm(key)
         return cipher.encrypt(nonce=nonce, data=pt, associated_data=aad)
 
     def open(self, key: bytes, nonce: bytes, aad: bytes | None, ct: bytes) -> bytes:
         """
-        Decrypt ciphertext `ct` and authenticate optional associated data `aad` using symmetric key and nonce,
-        returning plaintext `pt`.
-        :param key: symmetric key
-        :param nonce: nonce value
-        :param aad: associated data
-        :param ct: ciphertext
-        :return: plaintext
+        Decrypts ciphertext `ct` and authenticates optional associated data `aad` using `key` and `nonce`.
+
+        :param key: A symmetric key.
+        :param nonce: A nonce value.
+        :param aad: Additional data to authenticate.
+        :param ct: A Ciphertext.
+        :return: The plaintext.
         """
-        cipher: AESGCM | ChaCha20Poly1305 = self._algorithm(key)
+        cipher = self._algorithm(key)
         return cipher.decrypt(nonce=nonce, data=ct, associated_data=aad)
 
 
 class AeadAes256Gcm(AbstractAead):
-    """
-    AES-256-GCM
-    """
-
     @property
     def id(self) -> AeadIds:
         return AeadIds.AES_256_GCM
@@ -106,10 +102,6 @@ class AeadAes256Gcm(AbstractAead):
 
 
 class AeadAes128Gcm(AbstractAead):
-    """
-    AES-128-GCM
-    """
-
     @property
     def id(self) -> AeadIds:
         return AeadIds.AES_128_GCM
@@ -132,10 +124,6 @@ class AeadAes128Gcm(AbstractAead):
 
 
 class AeadChaCha20Poly1305(AbstractAead):
-    """
-    ChaCha20Poly1305
-    """
-
     @property
     def id(self) -> AeadIds:
         return AeadIds.ChaCha20Poly1305
@@ -158,10 +146,6 @@ class AeadChaCha20Poly1305(AbstractAead):
 
 
 class AeadExportOnly(AbstractAead):
-    """
-    Export-only
-    """
-
     @property
     def id(self) -> AeadIds:
         return AeadIds.Export_only
@@ -191,15 +175,16 @@ class AeadExportOnly(AbstractAead):
 
 class AeadFactory:
     """
-    AEAD factory class
+    AEAD factory class.
     """
 
     @classmethod
     def new(cls, aead_id: AeadIds) -> AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly:
         """
-        return an instance of AeadAes128Gcm or AeadAes256Gcm or AeadChaCha20Poly1305 or AeadExportOnly
-        :param aead_id: AEAD id
-        :return: an instance
+        Create an instance of corresponding AEAD.
+
+        :param aead_id: AEAD id.
+        :return: An instance of AEAD.
         """
         match aead_id:
             case AeadIds.AES_128_GCM:
