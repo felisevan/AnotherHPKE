@@ -21,17 +21,17 @@ class BaseContext:
         self._exporter_secret = exporter_secret
         self._base_nonce = base_nonce
         # TODO: seq upper bound check is buggy
-        self._seq = 0
+        self._seq_ = 0
 
-    # @property
-    # def _seq(self):
-    #     return self._seq_
-    #
-    # @_seq.setter
-    # def _seq(self, value):
-    #     if self._seq_ >= (1 << (8 * self.ciphersuite.aead.Nn)) - 1:
-    #         raise RuntimeError("Message limit reached")
-    #     self._seq_ = self._seq_ + value
+    @property
+    def _seq(self):
+        return self._seq_
+
+    @_seq.setter
+    def _seq(self, value):
+        if self._seq_ >= (1 << (8 * self.ciphersuite.aead.Nn)) - 1:
+            raise RuntimeError("Message limit reached")
+        self._seq_ = value
 
     def seal(self, pt: bytes, aad: bytes = b"") -> bytes:
         """
