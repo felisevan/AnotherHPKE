@@ -1,5 +1,5 @@
 from .constants import ModeIds, RoleIds
-from .utilities import concat, I2OSP, xor_bytes, OS2IP
+from .utilities import concat, I2OSP, xor_bytes
 
 
 class BaseContext:
@@ -20,7 +20,6 @@ class BaseContext:
         self._key = key
         self._exporter_secret = exporter_secret
         self._base_nonce = base_nonce
-        # TODO: seq upper bound check is buggy
         self._seq_ = 0
 
     @property
@@ -62,7 +61,8 @@ class BaseContext:
         :param L: length
         :return: secret
         """
-        return self.ciphersuite.kdf.labeled_expand(self._exporter_secret, b"sec", exporter_content, L, suite_id=self.ciphersuite.id)
+        return self.ciphersuite.kdf.labeled_expand(self._exporter_secret, b"sec", exporter_content, L,
+                                                   suite_id=self.ciphersuite.id)
 
     def _compute_nonce(self) -> bytes:
         """

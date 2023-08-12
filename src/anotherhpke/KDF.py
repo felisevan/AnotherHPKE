@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
 from cryptography.hazmat.primitives import hmac
-from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
 from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256, SHA384, SHA512
+from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
 
 from .constants import KdfIds
 from .utilities import concat, I2OSP

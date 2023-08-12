@@ -1,5 +1,4 @@
 import json
-from pprint import pprint
 
 from src.anotherhpke.Ciphersuite import Ciphersuite
 from src.anotherhpke.constants import ModeIds, AeadIds, KdfIds, KemIds
@@ -131,6 +130,5 @@ def test(x):
 
 if __name__ == '__main__':
     test_vectors = load_test_vector()
-    for k, v in enumerate(test_vectors):
-        print(k)
-        test(v)
+    for i in test_vectors:
+        test(i)
