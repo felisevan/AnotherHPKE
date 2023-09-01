@@ -23,9 +23,6 @@ def test_asym_key(kem, ikm, sk, pk):
 
 def test(x):
     aead_id = AeadIds(x['aead_id'])
-    if aead_id == AeadIds.Export_only:
-        print("Export only")
-        return
     kdf_id = KdfIds(x['kdf_id'])
     kem_id = KemIds(x['kem_id'])
     c = Ciphersuite(kem_id, kdf_id, aead_id)
@@ -117,6 +114,14 @@ def test(x):
 
         case _:
             raise NotImplementedError
+
+    for i in x['exports']:
+        L = i['L']
+        exported_value = bfh(i['exported_value'])
+        exporter_context = bfh(i['exporter_context'])
+
+        ret_exported_value = ctx.export(exporter_context, L)
+        assert exported_value == ret_exported_value
 
     for i in x['encryptions']:
         pt = bfh(i['pt'])
