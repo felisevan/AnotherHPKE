@@ -56,6 +56,15 @@ class AbstractKEM(ABC):
         raise NotImplementedError
 
     @property
+    @abstractmethod
+    def auth(self) -> bool:
+        """
+        A boolean indicating if this algorithm provides the AuthEncap()/AuthDecap() interface.
+        """
+
+        raise NotImplementedError
+
+    @property
     def _suite_id(self) -> bytes:
         """
         The specific suite id.
@@ -208,7 +217,7 @@ class AbstractKEM(ABC):
         if (not skE) and (not pkE):
             skE, pkE = self.generate_key_pair()
         else:
-            print("WARNING: skE and pkE are override by input value instead of random generated")
+            print("WARNING: skE and pkE are overriden by input value instead of random generated")
             assert skE.public_key() == pkE
         dh = concat(self._exchange(skE, pkR), self._exchange(skS, pkR))
         enc = self.serialize_public_key(pkE)
@@ -351,6 +360,10 @@ class DhKemP256HkdfSha256(EcAbstractKem):
     def _Npk(self) -> int:
         return 65
 
+    @property
+    def auth(self) -> bool:
+        return True
+
 
 class DhKemP384HkdfSha384(EcAbstractKem):
 
@@ -386,6 +399,10 @@ class DhKemP384HkdfSha384(EcAbstractKem):
     def _Npk(self) -> int:
         return 97
 
+    @property
+    def auth(self) -> bool:
+        return True
+
 
 class DhKemP521HkdfSha512(EcAbstractKem):
 
@@ -420,6 +437,10 @@ class DhKemP521HkdfSha512(EcAbstractKem):
     @property
     def _Npk(self) -> int:
         return 133
+
+    @property
+    def auth(self) -> bool:
+        return True
 
 
 class XEcAbstractKem(AbstractKEM):
@@ -504,6 +525,10 @@ class DhKemX25519HkdfSha256(XEcAbstractKem):
     def _Npk(self) -> int:
         return 32
 
+    @property
+    def auth(self) -> bool:
+        return True
+
 
 class DhKemX448HkdfSha512(XEcAbstractKem):
     @property
@@ -529,6 +554,10 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
     @property
     def _Npk(self) -> int:
         return 56
+
+    @property
+    def auth(self) -> bool:
+        return True
 
 
 class KemFactory:
