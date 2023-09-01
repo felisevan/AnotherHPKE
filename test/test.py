@@ -62,7 +62,7 @@ def test(x):
             psk = bfh(x['psk'])
             psk_id = bfh(x['psk_id'])
 
-            ret_enc, ctx = c.SetupAuthPSKS(
+            ret_enc, ctx_sender = c.SetupAuthPSKS(
                 pkR=pkR,
                 skS=skS,
                 psk=psk,
@@ -72,6 +72,18 @@ def test(x):
                 pkE=pkE
             )
             assert enc == ret_enc
+
+            skR = c.kem.deserialize_private_key(skRm)
+            pkS = c.kem.deserialize_public_key(pkSm)
+            ctx_recipient = c.SetupAuthPSKR(
+                enc=enc,
+                skR=skR,
+                pkS=pkS,
+                psk=psk,
+                psk_id=psk_id,
+                info=info
+            )
+
 
         case ModeIds.MODE_AUTH:
             ikmS = bfh(x['ikmS'])
@@ -80,7 +92,7 @@ def test(x):
             test_asym_key(c.kem, ikmS, skSm, pkSm)
             skS = c.kem.deserialize_private_key(skSm)
 
-            ret_enc, ctx = c.SetupAuthS(
+            ret_enc, ctx_sender = c.SetupAuthS(
                 pkR=pkR,
                 skS=skS,
                 info=info,
@@ -89,11 +101,20 @@ def test(x):
             )
             assert enc == ret_enc
 
+            skR = c.kem.deserialize_private_key(skRm)
+            pkS = c.kem.deserialize_public_key(pkSm)
+            ctx_recipient = c.SetupAuthR(
+                enc=enc,
+                skR=skR,
+                pkS=pkS,
+                info=info
+            )
+
         case ModeIds.MODE_PSK:
             psk = bfh(x['psk'])
             psk_id = bfh(x['psk_id'])
 
-            ret_enc, ctx = c.SetupPSKS(
+            ret_enc, ctx_sender = c.SetupPSKS(
                 pkR=pkR,
                 psk=psk,
                 psk_id=psk_id,
@@ -103,14 +124,30 @@ def test(x):
             )
             assert enc == ret_enc
 
+            skR = c.kem.deserialize_private_key(skRm)
+            ctx_recipient = c.SetupPSKR(
+                enc=enc,
+                skR=skR,
+                psk=psk,
+                psk_id=psk_id,
+                info=info
+            )
+
         case ModeIds.MODE_BASE:
-            ret_enc, ctx = c.SetupBaseS(
+            ret_enc, ctx_sender = c.SetupBaseS(
                 pkR=pkR,
                 info=info,
                 skE=skE,
                 pkE=pkE
             )
             assert enc == ret_enc
+
+            skR = c.kem.deserialize_private_key(skRm)
+            ctx_recipient = c.SetupBaseR(
+                enc=enc,
+                skR=skR,
+                info=info
+            )
 
         case _:
             raise NotImplementedError
@@ -120,8 +157,11 @@ def test(x):
         exported_value = bfh(i['exported_value'])
         exporter_context = bfh(i['exporter_context'])
 
-        ret_exported_value = ctx.export(exporter_context, L)
-        assert exported_value == ret_exported_value
+        sender_exported_value = ctx_sender.export(exporter_context, L)
+        assert exported_value == sender_exported_value
+
+        recipient_exported_value = ctx_recipient.export(exporter_context, L)
+        assert exported_value == recipient_exported_value
 
     for i in x['encryptions']:
         pt = bfh(i['pt'])
@@ -129,8 +169,11 @@ def test(x):
         aad = bfh(i['aad'])
         ct = bfh(i['ct'])
 
-        ret_ct = ctx.seal(pt, aad)
+        ret_ct = ctx_sender.seal(pt, aad)
         assert ct == ret_ct
+
+        ret_pt = ctx_recipient.open(ct, aad)
+        assert pt == ret_pt
 
 
 if __name__ == '__main__':
