@@ -7,7 +7,13 @@ class BaseContext:
     Abstract class of KDF with defining methods.
     """
 
-    def __init__(self, ciphersuite, key: bytes | None, base_nonce: bytes | None, exporter_secret: bytes):
+    def __init__(
+        self,
+        ciphersuite,
+        key: bytes | None,
+        base_nonce: bytes | None,
+        exporter_secret: bytes,
+    ):
         """
         :param ciphersuite: the ciphersuite
         :param key: key called by AEAD
@@ -59,8 +65,13 @@ class BaseContext:
         :param L: length
         :return: secret
         """
-        return self.ciphersuite.kdf.labeled_expand(self._exporter_secret, b"sec", exporter_content, L,
-                                                   suite_id=self.ciphersuite.id)
+        return self.ciphersuite.kdf.labeled_expand(
+            self._exporter_secret,
+            b"sec",
+            exporter_content,
+            L,
+            suite_id=self.ciphersuite.id,
+        )
 
     def _compute_nonce(self) -> bytes:
         """
@@ -117,8 +128,8 @@ class ContextFactory:
         :param psk_id: the pre-shared key id to be tested.
 
         """
-        got_psk = (psk != self._default_psk)
-        got_psk_id = (psk_id != self._default_psk_id)
+        got_psk = psk != self._default_psk
+        got_psk_id = psk_id != self._default_psk_id
         if got_psk != got_psk_id:
             raise ValueError("Inconsistent PSK inputs")
 
@@ -127,64 +138,68 @@ class ContextFactory:
         if (not got_psk) and (mode in [ModeIds.MODE_PSK, ModeIds.MODE_AUTH_PSK]):
             raise ValueError("Missing required PSK input")
 
-    def key_schedule(self, mode: ModeIds, shared_secret: bytes, info: bytes | None, psk: bytes,
-                     psk_id: bytes) -> BaseContext | ContextExportOnly:
+    def key_schedule(
+        self,
+        mode: ModeIds,
+        shared_secret: bytes,
+        info: bytes | None,
+        psk: bytes,
+        psk_id: bytes,
+    ) -> BaseContext | ContextExportOnly:
         self._verify_psk_inputs(mode, psk, psk_id)
 
         match mode:
             case ModeIds.MODE_AUTH | ModeIds.MODE_AUTH_PSK:
                 if not self.ciphersuite.kem.auth:
-                    raise ValueError("Selected KEM doesn't support Auth or Auth PSK mode.")
+                    raise ValueError(
+                        "Selected KEM doesn't support Auth or Auth PSK mode."
+                    )
             case _:
                 pass
 
         info = b"" if info is None else info
 
         psk_id_hash = self.ciphersuite.kdf.labeled_extract(
-            b"",
-            b"psk_id_hash",
-            psk_id,
-            suite_id=self.ciphersuite.id
+            b"", b"psk_id_hash", psk_id, suite_id=self.ciphersuite.id
         )
         info_hash = self.ciphersuite.kdf.labeled_extract(
-            b"",
-            b"info_hash",
-            info,
-            suite_id=self.ciphersuite.id
+            b"", b"info_hash", info, suite_id=self.ciphersuite.id
         )
         key_schedule_context = concat(I2OSP(mode, 1), psk_id_hash, info_hash)
 
-        secret = self.ciphersuite.kdf.labeled_extract(shared_secret, b"secret", psk, suite_id=self.ciphersuite.id)
+        secret = self.ciphersuite.kdf.labeled_extract(
+            shared_secret, b"secret", psk, suite_id=self.ciphersuite.id
+        )
 
         exporter_secret = self.ciphersuite.kdf.labeled_expand(
             secret,
             b"exp",
             key_schedule_context,
             self.ciphersuite.kdf.Nh,
-            suite_id=self.ciphersuite.id
+            suite_id=self.ciphersuite.id,
         )
 
         if self.ciphersuite.aead.id == AeadIds.Export_only:
             return ContextExportOnly(
-                        ciphersuite=self.ciphersuite,
-                        key=None,
-                        base_nonce=None,
-                        exporter_secret=exporter_secret
-                    )
+                ciphersuite=self.ciphersuite,
+                key=None,
+                base_nonce=None,
+                exporter_secret=exporter_secret,
+            )
         else:
             key = self.ciphersuite.kdf.labeled_expand(
                 secret,
                 b"key",
                 key_schedule_context,
                 self.ciphersuite.aead.Nk,
-                suite_id=self.ciphersuite.id
+                suite_id=self.ciphersuite.id,
             )
             base_nonce = self.ciphersuite.kdf.labeled_expand(
                 secret,
                 b"base_nonce",
                 key_schedule_context,
                 self.ciphersuite.aead.Nn,
-                suite_id=self.ciphersuite.id
+                suite_id=self.ciphersuite.id,
             )
             match self._role_id:
                 case RoleIds.SENDER:
@@ -192,14 +207,14 @@ class ContextFactory:
                         ciphersuite=self.ciphersuite,
                         key=key,
                         base_nonce=base_nonce,
-                        exporter_secret=exporter_secret
+                        exporter_secret=exporter_secret,
                     )
                 case RoleIds.RECIPIENT:
                     return ContextRecipient(
                         ciphersuite=self.ciphersuite,
                         key=key,
                         base_nonce=base_nonce,
-                        exporter_secret=exporter_secret
+                        exporter_secret=exporter_secret,
                     )
                 case _:
                     raise NotImplementedError("A new role")

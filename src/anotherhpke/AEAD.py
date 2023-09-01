@@ -179,7 +179,9 @@ class AeadFactory:
     """
 
     @classmethod
-    def new(cls, aead_id: AeadIds) -> AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly:
+    def new(
+        cls, aead_id: AeadIds
+    ) -> AeadAes128Gcm | AeadAes256Gcm | AeadChaCha20Poly1305 | AeadExportOnly:
         """
         Create an instance of corresponding AEAD.
 

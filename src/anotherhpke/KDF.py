@@ -63,7 +63,9 @@ class AbstractHkdf(ABC):
         """
         return HKDFExpand(self._hash, L, info).derive(prk)
 
-    def labeled_extract(self, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes) -> bytes:
+    def labeled_extract(
+        self, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes
+    ) -> bytes:
         """
         Extract a pseudorandom key of fixed length `Nh` bytes from `salt` and input keying material `ikm`
          but labeled with `label`.
@@ -81,7 +83,9 @@ class AbstractHkdf(ABC):
             ikm=labeled_ikm,
         )
 
-    def labeled_expand(self, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes) -> bytes:
+    def labeled_expand(
+        self, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes
+    ) -> bytes:
         """
         Expand a pseudorandom key prk using optional string info into L bytes of output keying material
         but labeled with `label`.
