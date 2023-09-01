@@ -1,4 +1,4 @@
-from .constants import ModeIds, RoleIds
+from .constants import ModeIds, RoleIds, AeadIds
 from .utilities import concat, I2OSP, xor_bytes
 
 
@@ -9,9 +9,7 @@ class BaseContext:
 
     def __init__(self, ciphersuite, key: bytes, base_nonce: bytes, exporter_secret: bytes):
         """
-        :param suite_id: suite id value
-        :param kdf: specific KDF type
-        :param aead: specific AEAD type
+        :param ciphersuite: the ciphersuite
         :param key: key called by AEAD
         :param base_nonce: base nonce value
         :param exporter_secret: the value returned from labeled_expand
@@ -67,7 +65,6 @@ class BaseContext:
     def _compute_nonce(self) -> bytes:
         """
         compute next nonce
-        :param seq: sequence value
         :return: next nonce
         """
         ret = xor_bytes(self._base_nonce, I2OSP(self._seq, self.ciphersuite.aead.Nn))
