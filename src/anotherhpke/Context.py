@@ -159,20 +159,24 @@ class ContextFactory:
 
         secret = self.ciphersuite.kdf.labeled_extract(shared_secret, b"secret", psk, suite_id=self.ciphersuite.id)
 
-        key = self.ciphersuite.kdf.labeled_expand(
-            secret,
-            b"key",
-            key_schedule_context,
-            self.ciphersuite.aead.Nk,
-            suite_id=self.ciphersuite.id
-        )
-        base_nonce = self.ciphersuite.kdf.labeled_expand(
-            secret,
-            b"base_nonce",
-            key_schedule_context,
-            self.ciphersuite.aead.Nn,
-            suite_id=self.ciphersuite.id
-        )
+        if self.ciphersuite.aead.id == AeadIds.Export_only:
+            key = None
+            base_nonce = None
+        else:
+            key = self.ciphersuite.kdf.labeled_expand(
+                secret,
+                b"key",
+                key_schedule_context,
+                self.ciphersuite.aead.Nk,
+                suite_id=self.ciphersuite.id
+            )
+            base_nonce = self.ciphersuite.kdf.labeled_expand(
+                secret,
+                b"base_nonce",
+                key_schedule_context,
+                self.ciphersuite.aead.Nn,
+                suite_id=self.ciphersuite.id
+            )
 
         exporter_secret = self.ciphersuite.kdf.labeled_expand(
             secret,
