@@ -53,4 +53,3 @@ class RoleIds(IntEnum):
     """
     SENDER = auto()
     RECIPIENT = auto()
-    EXPORTER = auto()
