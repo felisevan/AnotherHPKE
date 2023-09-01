@@ -7,7 +7,7 @@ class BaseContext:
     Abstract class of KDF with defining methods.
     """
 
-    def __init__(self, ciphersuite, key: bytes, base_nonce: bytes, exporter_secret: bytes):
+    def __init__(self, ciphersuite, key: bytes | None, base_nonce: bytes | None, exporter_secret: bytes):
         """
         :param ciphersuite: the ciphersuite
         :param key: key called by AEAD
@@ -156,9 +156,21 @@ class ContextFactory:
 
         secret = self.ciphersuite.kdf.labeled_extract(shared_secret, b"secret", psk, suite_id=self.ciphersuite.id)
 
+        exporter_secret = self.ciphersuite.kdf.labeled_expand(
+            secret,
+            b"exp",
+            key_schedule_context,
+            self.ciphersuite.kdf.Nh,
+            suite_id=self.ciphersuite.id
+        )
+
         if self.ciphersuite.aead.id == AeadIds.Export_only:
-            key = None
-            base_nonce = None
+            return ContextExportOnly(
+                        ciphersuite=self.ciphersuite,
+                        key=None,
+                        base_nonce=None,
+                        exporter_secret=exporter_secret
+                    )
         else:
             key = self.ciphersuite.kdf.labeled_expand(
                 secret,
@@ -174,29 +186,20 @@ class ContextFactory:
                 self.ciphersuite.aead.Nn,
                 suite_id=self.ciphersuite.id
             )
-
-        exporter_secret = self.ciphersuite.kdf.labeled_expand(
-            secret,
-            b"exp",
-            key_schedule_context,
-            self.ciphersuite.kdf.Nh,
-            suite_id=self.ciphersuite.id
-        )
-
-        match self._role_id:
-            case RoleIds.SENDER:
-                return ContextSender(
-                    ciphersuite=self.ciphersuite,
-                    key=key,
-                    base_nonce=base_nonce,
-                    exporter_secret=exporter_secret
-                )
-            case RoleIds.RECIPIENT:
-                return ContextRecipient(
-                    ciphersuite=self.ciphersuite,
-                    key=key,
-                    base_nonce=base_nonce,
-                    exporter_secret=exporter_secret
-                )
-            case _:
-                raise NotImplementedError("A new role")
+            match self._role_id:
+                case RoleIds.SENDER:
+                    return ContextSender(
+                        ciphersuite=self.ciphersuite,
+                        key=key,
+                        base_nonce=base_nonce,
+                        exporter_secret=exporter_secret
+                    )
+                case RoleIds.RECIPIENT:
+                    return ContextRecipient(
+                        ciphersuite=self.ciphersuite,
+                        key=key,
+                        base_nonce=base_nonce,
+                        exporter_secret=exporter_secret
+                    )
+                case _:
+                    raise NotImplementedError("A new role")
