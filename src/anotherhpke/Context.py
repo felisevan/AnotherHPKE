@@ -134,6 +134,13 @@ class ContextFactory:
                      psk_id: bytes) -> BaseContext | ContextExportOnly:
         self._verify_psk_inputs(mode, psk, psk_id)
 
+        match mode:
+            case ModeIds.MODE_AUTH | ModeIds.MODE_AUTH_PSK:
+                if not self.ciphersuite.kem.auth:
+                    raise ValueError("Selected KEM doesn't support Auth or Auth PSK mode.")
+            case _:
+                pass
+
         info = b"" if info is None else info
 
         psk_id_hash = self.ciphersuite.kdf.labeled_extract(
