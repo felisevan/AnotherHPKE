@@ -3,16 +3,6 @@
 HPKE((**Hybrid Public Key Encryption**)) implementation in **_Python3_** and package **_cryptography_** according
 to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf).
 
-#### 😭Please give us undergraduate students a little star, hoping this project meets your needs.😋
-
-#### 🥰Your recognition and support matters! 🥰
-
-# Background
-
-HPKE component was needed when building one of our other projects, ~~but we didn't find an easy-to-use and complete HPKE
-implementation~~ which gave us the incentive to implement this project in python following the RFC documentation and
-other authors' experience.
-
 # Announcement
 
 Inspired by
@@ -23,21 +13,11 @@ we contribute to this project in the position of safeguarding the common interes
 humankind.
 ---
 
+#### 😭Please give us undergraduate students a little star, hoping this project meets your needs.😋
+
+#### 🥰Your recognition and support matters! 🥰
+
 ### Stand with Ukraine
-
-# Dependency
-
-This project simply uses **_python3_** with package **_cryptography_**.
-
-* pip  
-  `pip install cryptography`
-
-***
-
-* conda  
-  `conda install -c anaconda cryptography`   
-  or  
-  `conda install -c conda-forge cryptography`
 
 # Usage
 
@@ -58,7 +38,45 @@ ctx = ciphersuite.SetupBaseR(enc, recipient_pri)
 decrypted = ctx.open(encrypted)
 ```
 
-# Badge
+# Feature Matrix
+
+ - Modes
+   - [x] mode_base
+   - [x] mode_psk
+   - [x] mode_auth
+   - [x] mode_auth_psk
+ - AEADs
+   - [x] AES-128-GCM
+   - [x] AES-256-GCM
+   - [x] ChaCha20Poly1305
+   - [x] Export only
+ - KEMs
+   - [x] DHKEM(P-256, HKDF-SHA256)
+   - [x] DHKEM(P-384, HKDF-SHA384)
+   - [x] DHKEM(P-521, HKDF-SHA512)
+   - [x] DHKEM(X25519, HKDF-SHA256)
+   - [x] DHKEM(X448, HKDF-SHA512)
+   - [ ] X25519Kyber768Draft00
+ - KDFs
+   - [x] HKDF-SHA256
+   - [x] HKDF-SHA384
+   - [x] HKDF-SHA512
+
+  Just FYI, our project have a working `derive_key_pair` function for each implemented KEMs.
+
+# Dependency
+
+This project simply uses **_python3_** with package **_cryptography_**.
+
+* pip  
+  `pip install cryptography`
+
+***
+
+* conda  
+  `conda install -c anaconda cryptography`   
+  or  
+  `conda install -c conda-forge cryptography`
 
 # Related Efforts
 
