@@ -190,12 +190,5 @@ class ContextFactory:
                     base_nonce=base_nonce,
                     exporter_secret=exporter_secret
                 )
-            case RoleIds.EXPORTER:
-                return ContextExportOnly(
-                    ciphersuite=self.ciphersuite,
-                    key=key,
-                    base_nonce=base_nonce,
-                    exporter_secret=exporter_secret
-                )
             case _:
                 raise NotImplementedError("A new role")
