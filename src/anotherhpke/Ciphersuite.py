@@ -65,10 +65,82 @@ class Ciphersuite:
         return enc, ContextFactory(self, RoleIds.SENDER).key_schedule(ModeIds.MODE_AUTH_PSK, shared_secret, info,
                                                                       psk, psk_id)
 
-    def SetupAuthPSKR(self, enc: bytes, pkS: PublicKeyTypes, skR: PrivateKeyTypes, psk: bytes, psk_id: bytes,
+    def SetupAuthPSKR(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes, psk: bytes, psk_id: bytes,
                       info: bytes | None = None):
         if len(psk) < 32:
             raise ValueError("psk doesn't have sufficient length")
         shared_secret = self.kem.auth_decap(enc, skR, pkS)
         return ContextFactory(self, RoleIds.RECIPIENT).key_schedule(ModeIds.MODE_AUTH_PSK, shared_secret, info,
                                                                     psk, psk_id)
+
+    def SealBase(self, pkR: PublicKeyTypes, pt: bytes, info: bytes | None = None, aad: bytes = b"") -> tuple[bytes, bytes]:
+        enc, ctx = self.SetupBaseS(pkR, info)
+        ct = ctx.seal(pt, aad)
+        return enc, ct
+
+    def OpenBase(self, enc: bytes, skR: PrivateKeyTypes, ct: bytes, aad: bytes = b"", info: bytes | None = None) -> bytes:
+        ctx = self.SetupBaseR(enc, skR, info)
+        return ctx.open(ct, aad)
+
+    def SendExportBase(self, pkR: PublicKeyTypes, exporter_context: bytes, L: int, info: bytes | None = None):
+        enc, ctx = self.SetupBaseS(pkR, info)
+        exported = ctx.export(exporter_context, L)
+        return enc, exported
+
+    def ReceiveExportBase(self, enc: bytes, skR: PrivateKeyTypes, exporter_context: bytes, L: int, info: bytes | None = None):
+        ctx = self.SetupBaseR(enc, skR, info)
+        return ctx.export(exporter_context, L)
+
+    def SealPSK(self, pkR: PublicKeyTypes, psk: bytes, psk_id: bytes, pt: bytes, info: bytes | None = None, aad: bytes = b"") -> tuple[bytes, bytes]:
+        enc, ctx = self.SetupPSKS(pkR, psk, psk_id, info)
+        ct = ctx.seal(pt, aad)
+        return enc, ct
+
+    def OpenPSK(self, enc: bytes, skR: PrivateKeyTypes, psk: bytes, psk_id: bytes, ct: bytes, aad: bytes = b"", info: bytes | None = None) -> bytes:
+        ctx = self.SetupPSKR(enc, skR, psk, psk_id, info)
+        return ctx.open(ct, aad)
+
+    def SendExportPSK(self, pkR: PublicKeyTypes, psk: bytes, psk_id: bytes, exporter_context: bytes, L: int, info: bytes | None = None):
+        enc, ctx = self.SetupPSKS(pkR, psk, psk_id, info)
+        exported = ctx.export(exporter_context, L)
+        return enc, exported
+
+    def ReceiveExportPSK(self, enc: bytes, skR: PrivateKeyTypes, psk: bytes, psk_id: bytes, exporter_context: bytes, L: int, info: bytes | None = None):
+        ctx = self.SetupPSKR(enc, skR, psk, psk_id, info)
+        return ctx.export(exporter_context, L)
+
+    def SealAuth(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, pt: bytes, info: bytes | None = None, aad: bytes = b"") -> tuple[bytes, bytes]:
+        enc, ctx = self.SetupAuthS(pkR, skS, info)
+        ct = ctx.seal(pt, aad)
+        return enc, ct
+
+    def OpenAuth(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes, ct: bytes, aad: bytes = b"", info: bytes | None = None) -> bytes:
+        ctx = self.SetupAuthR(enc, skR, pkS, info)
+        return ctx.open(ct, aad)
+
+    def SendExportAuth(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, exporter_context: bytes, L: int, info: bytes | None = None):
+        enc, ctx = self.SetupAuthS(pkR, skS, info)
+        exported = ctx.export(exporter_context, L)
+        return enc, exported
+
+    def ReceiveExportAuth(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes, exporter_context: bytes, L: int, info: bytes | None = None):
+        ctx = self.SetupAuthR(enc, skR, pkS, info)
+        return ctx.export(exporter_context, L)
+
+    def SealAuthPSK(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, psk: bytes, psk_id: bytes, pt: bytes, info: bytes | None = None, aad: bytes = b"") -> tuple[bytes, bytes]:
+        enc, ctx = self.SetupAuthPSKS(pkR, skS, psk, psk_id, info)
+        ct = ctx.seal(pt, aad)
+        return enc, ct
+
+    def OpenAuthPSK(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes, psk: bytes, psk_id: bytes, ct: bytes, aad: bytes = b"", info: bytes | None = None) -> bytes:
+        ctx = self.SetupAuthPSKR(enc, skR, pkS, psk, psk_id, info)
+        return ctx.open(ct, aad)
+
+    def SendExportAuthPSK(self, pkR: PublicKeyTypes, skS: PrivateKeyTypes, psk: bytes, psk_id: bytes, exporter_context: bytes, L: int, info: bytes | None = None):
+        enc, ctx = self.SetupAuthPSKS(pkR, skS, psk, psk_id, info)
+        exported = ctx.export(exporter_context, L)
+        return enc, exported
+
+    def ReceiveExportAuthPSK(self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes, psk: bytes, psk_id: bytes, exporter_context: bytes, L: int, info: bytes | None = None):
+        ctx = self.SetupAuthPSKR(enc, skR, pkS, psk, psk_id, info)
+        return ctx.export(exporter_context, L)
