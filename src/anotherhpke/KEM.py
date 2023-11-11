@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
     EllipticCurvePublicKey,
     EllipticCurve,
     ECDH,
-    EllipticCurvePrivateKey,
+    EllipticCurvePrivateKey, SECP256K1,
 )
 from cryptography.hazmat.primitives.asymmetric.types import (
     PrivateKeyTypes,
@@ -454,6 +454,44 @@ class DhKemP521HkdfSha512(EcAbstractKem):
     @property
     def _Npk(self) -> int:
         return 133
+
+    @property
+    def auth(self) -> bool:
+        return True
+
+
+class DhKemSECP256K1HkdfSha256(EcAbstractKem):
+    @property
+    def _curve(self) -> Type[EllipticCurve]:
+        return SECP256K1
+
+    @property
+    def _order(self) -> int:
+        return 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+
+    @property
+    def _bitmask(self) -> int:
+        return 0xFF
+
+    @property
+    def id(self) -> KemIds:
+        return KemIds.DHKEM_SECP256K1_HKDF_SHA256
+
+    @property
+    def _KDF(self) -> AbstractHkdf:
+        return HkdfSHA256()
+
+    @property
+    def _Nsecret(self) -> int:
+        return 32
+
+    @property
+    def _Nsk(self) -> int:
+        return 32
+
+    @property
+    def _Npk(self) -> int:
+        return 65
 
     @property
     def auth(self) -> bool:
