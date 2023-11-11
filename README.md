@@ -49,6 +49,8 @@ decrypted = ctx.open(encrypted)
    - [x] AES-128-GCM
    - [x] AES-256-GCM
    - [x] ChaCha20Poly1305
+   - [ ] AES-256-SIV (Draft only, don't recommend for production use, see [this](https://datatracker.ietf.org/doc/draft-irtf-cfrg-dnhpke/03/))
+   - [ ] AES-512-SIV (Draft only, don't recommend for production use, see [this](https://datatracker.ietf.org/doc/draft-irtf-cfrg-dnhpke/03/))
    - [x] Export only
  - KEMs
    - [x] DHKEM(P-256, HKDF-SHA256)
@@ -56,6 +58,10 @@ decrypted = ctx.open(encrypted)
    - [x] DHKEM(P-521, HKDF-SHA512)
    - [x] DHKEM(X25519, HKDF-SHA256)
    - [x] DHKEM(X448, HKDF-SHA512)
+   - [ ] DHKEM(CP-256, HKDF-SHA256)
+   - [ ] DHKEM(CP-384, HKDF-SHA384)
+   - [ ] DHKEM(CP-521, HKDF-SHA512)
+   - [x] DHKEM(secp256k1, HKDF-SHA256)
    - [ ] X25519Kyber768Draft00
  - KDFs
    - [x] HKDF-SHA256
