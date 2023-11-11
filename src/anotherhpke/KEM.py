@@ -621,6 +621,7 @@ class KemFactory:
         DhKemP256HkdfSha256
         | DhKemP384HkdfSha384
         | DhKemP521HkdfSha512
+        | DhKemSECP256K1HkdfSha256
         | DhKemX25519HkdfSha256
         | DhKemX448HkdfSha512
     ):
@@ -637,6 +638,8 @@ class KemFactory:
                 return DhKemP384HkdfSha384()
             case KemIds.DHKEM_P_521_HKDF_SHA512:
                 return DhKemP521HkdfSha512()
+            case KemIds.DHKEM_SECP256K1_HKDF_SHA256:
+                return DhKemSECP256K1HkdfSha256()
             case KemIds.DHKEM_X25519_HKDF_SHA256:
                 return DhKemX25519HkdfSha256()
             case KemIds.DHKEM_X448_HKDF_SHA512:
