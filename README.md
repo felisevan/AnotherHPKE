@@ -3,21 +3,6 @@
 HPKE((**Hybrid Public Key Encryption**)) implementation in **_Python3_** and package **_cryptography_** according
 to  [RFC 9180](https://www.ietf.org/rfc/rfc9180.pdf).
 
-# Announcement
-
-Inspired by
-_[Universal Declaration of Human Rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights)_
-and
-_[17 SDG goals](https://sdgs.un.org/goals)_,
-we contribute to this project in the position of safeguarding the common interests and universal values of all
-humankind.
----
-
-#### 😭Please give us a little star, hoping this project meets your needs.😋
-
-#### 🥰Your recognition and support matters! 🥰
-
-### Stand with Ukraine
 
 # Usage
 
@@ -97,3 +82,17 @@ This project simply uses **_python3_** with package **_cryptography_**.
 # License
 
 [AGPL-3.0 license](https://www.gnu.org/licenses/agpl-3.0-standalone.html)
+
+# Announcement
+### Stand with Ukraine
+Inspired by
+_[Universal Declaration of Human Rights](https://www.un.org/en/about-us/universal-declaration-of-human-rights)_
+and
+_[17 SDG goals](https://sdgs.un.org/goals)_,
+we contribute to this project in the position of safeguarding the common interests and universal values of all
+humankind.
+---
+
+#### 😭Please give us a little star, hoping this project meets your needs.😋
+
+#### 🥰Your recognition and support matters! 🥰
