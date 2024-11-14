@@ -13,7 +13,7 @@ we contribute to this project in the position of safeguarding the common interes
 humankind.
 ---
 
-#### 😭Please give us undergraduate students a little star, hoping this project meets your needs.😋
+#### 😭Please give us a little star, hoping this project meets your needs.😋
 
 #### 🥰Your recognition and support matters! 🥰
 
