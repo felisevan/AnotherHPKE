@@ -1,82 +1,80 @@
-from abc import ABC, abstractmethod
+from typing import Protocol
 
 from cryptography.hazmat.primitives import hmac
-from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256, SHA384, SHA512
+from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512, HashAlgorithm
 from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
 
 from .constants import KdfIds
-from .utilities import concat, I2OSP
+from .utilities import I2OSP, concat
 
 
-class AbstractHkdf(ABC):
+class KdfProtocol(Protocol):
     """
-    Abstract class of KDF with defining methods.
+    Protocol defining the interface for a Key Derivation Function (KDF),
+    specifically an HKDF-like one.
     """
 
     @property
-    @abstractmethod
     def id(self) -> KdfIds:
-        """
-        The KDF id.
-        """
-
-        raise NotImplementedError
+        """The KDF id."""
+        ...
 
     @property
-    @abstractmethod
     def _hash(self) -> HashAlgorithm:
-        """
-        The underlying hash function.
-        """
-
-        raise NotImplementedError
+        """The underlying hash function instance."""
+        ...
 
     @property
-    @abstractmethod
     def Nh(self) -> int:
-        """
-        The output size of the extract() methods in bytes.
-        """
-
-        raise NotImplementedError
+        """The output size of the extract() methods in bytes."""
+        ...
 
     def _extract(self, salt: bytes, ikm: bytes) -> bytes:
         """
         Extract a pseudorandom key of fixed length `Nh` bytes from `salt` and input keying material `ikm`.
-
-        :param salt: A salt value.
-        :param ikm: An input keying material.
-        :return: The pseudorandom key with Nh bytes.
         """
-        ctx = hmac.HMAC(salt, self._hash)
-        ctx.update(ikm)
-        return ctx.finalize()
+        ...
 
     def _expand(self, prk: bytes, info: bytes, L: int) -> bytes:
         """
         Expand a pseudorandom key `prk` using `info` into `L` bytes of output keying material.
-
-        :param prk: A pseudorandom key.
-        :param info: Application specific context information.
-        :param L: The expected output length.
-        :return: The keying material with L bytes.
         """
-        return HKDFExpand(self._hash, L, info).derive(prk)
+        ...
 
     def labeled_extract(
         self, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes
     ) -> bytes:
         """
-        Extract a pseudorandom key of fixed length `Nh` bytes from `salt` and input keying material `ikm`
-         but labeled with `label`.
-
-        :param salt: A salt value.
-        :param label: A specific label value to indicate the caller context.
-        :param ikm: An input keying material.
-        :param suite_id: A byte string to indicate who the caller is.
-        :return: The extract result.
+        Extract a pseudorandom key but labeled.
         """
+        ...
 
+    def labeled_expand(
+        self, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes
+    ) -> bytes:
+        """
+        Expand a pseudorandom key but labeled.
+        """
+        ...
+
+
+class HkdfOperationMixin:
+    """
+    Mixin providing the common HKDF operations (_extract, _expand, labeled_extract, labeled_expand)
+    for KDFs that conform to a part of the KdfProtocol (specifically, providing _hash).
+    """
+
+    def _extract(self: KdfProtocol, salt: bytes, ikm: bytes) -> bytes:
+        ctx = hmac.HMAC(salt, self._hash)
+        ctx.update(ikm)
+        return ctx.finalize()
+
+    def _expand(self: KdfProtocol, prk: bytes, info: bytes, L: int) -> bytes:
+        return HKDFExpand(algorithm=self._hash, length=L, info=info).derive(prk)
+
+    def labeled_extract(
+        self: KdfProtocol, salt: bytes, label: bytes, ikm: bytes, suite_id: bytes
+    ) -> bytes:
         labeled_ikm = concat(b"HPKE-v1", suite_id, label, ikm)
         return self._extract(
             salt=salt,
@@ -84,20 +82,13 @@ class AbstractHkdf(ABC):
         )
 
     def labeled_expand(
-        self, prk: bytes, label: bytes, info: bytes, L: int, suite_id: bytes
+        self: KdfProtocol,
+        prk: bytes,
+        label: bytes,
+        info: bytes,
+        L: int,
+        suite_id: bytes,
     ) -> bytes:
-        """
-        Expand a pseudorandom key prk using optional string info into L bytes of output keying material
-        but labeled with `label`.
-
-        :param prk: A pseudorandom key.
-        :param label: A specific label value to indicate the caller context.
-        :param info: Application specific context information.
-        :param L: The expected output length.
-        :param suite_id: A byte string to indicate who the caller is.
-        :return: The expand result.
-        """
-
         labeled_info = concat(I2OSP(L, 2), b"HPKE-v1", suite_id, label, info)
         return self._expand(
             prk=prk,
@@ -106,13 +97,15 @@ class AbstractHkdf(ABC):
         )
 
 
-class HkdfSHA256(AbstractHkdf):
+class HkdfSHA256(HkdfOperationMixin):
     @property
     def id(self) -> KdfIds:
         return KdfIds.HKDF_SHA256
 
     @property
-    def _hash(self) -> HashAlgorithm:
+    def _hash(
+        self,
+    ) -> HashAlgorithm:
         return SHA256()
 
     @property
@@ -120,7 +113,7 @@ class HkdfSHA256(AbstractHkdf):
         return 32
 
 
-class HkdfSHA384(AbstractHkdf):
+class HkdfSHA384(HkdfOperationMixin):
     @property
     def id(self) -> KdfIds:
         return KdfIds.HKDF_SHA384
@@ -134,7 +127,7 @@ class HkdfSHA384(AbstractHkdf):
         return 48
 
 
-class HkdfSHA512(AbstractHkdf):
+class HkdfSHA512(HkdfOperationMixin):
     @property
     def id(self) -> KdfIds:
         return KdfIds.HKDF_SHA512
@@ -154,12 +147,12 @@ class KdfFactory:
     """
 
     @classmethod
-    def new(cls, kdf_id: KdfIds) -> HkdfSHA256 | HkdfSHA384 | HkdfSHA512:
+    def new(cls, kdf_id: KdfIds) -> KdfProtocol:
         """
         Create an instance of corresponding HKDF.
 
         :param kdf_id: KDF id.
-        :return: An instance of HKDF.
+        :return: An instance conforming to KdfProtocol.
         """
         match kdf_id:
             case KdfIds.HKDF_SHA256:
@@ -169,4 +162,6 @@ class KdfFactory:
             case KdfIds.HKDF_SHA512:
                 return HkdfSHA512()
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    f"KDF ID {kdf_id} not implemented in factory."
+                )

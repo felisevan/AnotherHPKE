@@ -25,7 +25,7 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import (
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from .constants import KemIds
-from .KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
+from .KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512, KdfProtocol
 from .utilities import I2OSP, OS2IP, concat
 
 
@@ -40,7 +40,7 @@ class AbstractKEM(ABC):
 
     @property
     @abstractmethod
-    def _KDF(self) -> AbstractHkdf:
+    def _KDF(self) -> KdfProtocol:
         """
         The specific KDF.
         """
@@ -365,7 +365,7 @@ class DhKemP256HkdfSha256(EcAbstractKem):
         return KemIds.DHKEM_P_256_HKDF_SHA256
 
     @property
-    def _KDF(self) -> AbstractHkdf:
+    def _KDF(self) -> HkdfSHA256:
         return HkdfSHA256()
 
     @property
@@ -403,7 +403,7 @@ class DhKemP384HkdfSha384(EcAbstractKem):
         return KemIds.DHKEM_P_384_HKDF_SHA384
 
     @property
-    def _KDF(self) -> AbstractHkdf:
+    def _KDF(self) -> HkdfSHA384:
         return HkdfSHA384()
 
     @property
@@ -441,7 +441,7 @@ class DhKemP521HkdfSha512(EcAbstractKem):
         return KemIds.DHKEM_P_521_HKDF_SHA512
 
     @property
-    def _KDF(self) -> AbstractHkdf:
+    def _KDF(self) -> HkdfSHA512:
         return HkdfSHA512()
 
     @property
@@ -479,7 +479,7 @@ class DhKemSECP256K1HkdfSha256(EcAbstractKem):
         return KemIds.DHKEM_SECP256K1_HKDF_SHA256
 
     @property
-    def _KDF(self) -> AbstractHkdf:
+    def _KDF(self) -> HkdfSHA256:
         return HkdfSHA256()
 
     @property
@@ -560,7 +560,7 @@ class DhKemX25519HkdfSha256(XEcAbstractKem):
         return KemIds.DHKEM_X25519_HKDF_SHA256
 
     @property
-    def _KDF(self) -> AbstractHkdf:
+    def _KDF(self) -> HkdfSHA256:
         return HkdfSHA256()
 
     @property
@@ -590,7 +590,7 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
         return KemIds.DHKEM_X448_HKDF_SHA512
 
     @property
-    def _KDF(self) -> AbstractHkdf:
+    def _KDF(self) -> HkdfSHA512:
         return HkdfSHA512()
 
     @property
