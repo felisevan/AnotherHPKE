@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from typing import Type
+from typing import Protocol, TypeVar
 
 from cryptography.hazmat.primitives.asymmetric.ec import (
     ECDH,
@@ -13,10 +12,6 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
     derive_private_key,
     generate_private_key,
 )
-from cryptography.hazmat.primitives.asymmetric.types import (
-    PrivateKeyTypes,
-    PublicKeyTypes,
-)
 from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import (
     X25519PrivateKey,
@@ -26,138 +21,70 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from .constants import KemIds
 from .KDF import HkdfSHA256, HkdfSHA384, HkdfSHA512, KdfProtocol
+from .types import (
+    HPKEPrivateKeyTypes,
+    HPKEPublicKeyTypes,
+    HPKEXCurvePrivateKey,
+    HPKEXCurvePublicKey,
+)
 from .utilities import I2OSP, OS2IP, concat
 
+PublicKeyTypeVar = TypeVar("PublicKeyTypeVar", bound=HPKEPublicKeyTypes)
+PrivateKeyTypeVar = TypeVar("PrivateKeyTypeVar", bound=HPKEPrivateKeyTypes)
 
-class AbstractKEM(ABC):
+
+class KemProtocol(Protocol[PublicKeyTypeVar, PrivateKeyTypeVar]):
     @property
-    @abstractmethod
-    def id(self) -> KemIds:
-        """
-        The KEM id.
-        """
-        raise NotImplementedError
-
+    def id(self) -> KemIds: ...
     @property
-    @abstractmethod
-    def _KDF(self) -> KdfProtocol:
-        """
-        The specific KDF.
-        """
-        raise NotImplementedError
-
+    def _KDF(self) -> KdfProtocol: ...
     @property
-    @abstractmethod
-    def _Nsecret(self) -> int:
-        """
-        The length in bytes of a KEM shared secret produced by the algorithm.
-        """
-        raise NotImplementedError
-
+    def _Nsecret(self) -> int: ...
     @property
-    @abstractmethod
-    def _Nsk(self) -> int:
-        """
-        The length in bytes of an encoded private key for the algorithm.
-        """
-        raise NotImplementedError
-
+    def _Nsk(self) -> int: ...
     @property
-    @abstractmethod
-    def _Npk(self) -> int:
-        """
-        The length in bytes of an encoded public key for the algorithm.
-        """
-
-        raise NotImplementedError
-
+    def _Npk(self) -> int: ...
     @property
-    @abstractmethod
-    def auth(self) -> bool:
-        """
-        A boolean indicating if this algorithm provides the AuthEncap()/AuthDecap() interface.
-        """
-
-        raise NotImplementedError
-
+    def auth(self) -> bool: ...
     @property
-    def _suite_id(self) -> bytes:
-        """
-        The specific suite id.
-        """
-        return concat(b"KEM", I2OSP(self.id, 2))
+    def _suite_id(self) -> bytes: ...
 
-    @abstractmethod
-    def generate_key_pair(self) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
-        """
-        Generate a valid key pair.
+    def generate_key_pair(self) -> tuple[PrivateKeyTypeVar, PublicKeyTypeVar]: ...
+    def derive_key_pair(
+        self, ikm: bytes
+    ) -> tuple[PrivateKeyTypeVar, PublicKeyTypeVar]: ...
+    def serialize_public_key(self, pkX: PublicKeyTypeVar) -> bytes: ...
+    def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypeVar: ...
+    def serialize_private_key(self, skX: PrivateKeyTypeVar) -> bytes: ...
+    def deserialize_private_key(self, skXm: bytes) -> PrivateKeyTypeVar: ...
+    def _exchange(self, sk: PrivateKeyTypeVar, pk: PublicKeyTypeVar) -> bytes: ...
 
-        :return: A `(private key, public key)` pair.
-        """
-        raise NotImplementedError
+    def extract_and_expand(self, dh: bytes, kem_context: bytes) -> bytes: ...
+    def encap(
+        self,
+        pkR: PublicKeyTypeVar,
+        skE: PrivateKeyTypeVar | None = None,
+        pkE: PublicKeyTypeVar | None = None,
+    ) -> tuple[bytes, bytes]: ...
+    def decap(self, enc: bytes, skR: PrivateKeyTypeVar) -> bytes: ...
+    def auth_encap(
+        self,
+        pkR: PublicKeyTypeVar,
+        skS: PrivateKeyTypeVar,
+        skE: PrivateKeyTypeVar | None = None,
+        pkE: PublicKeyTypeVar | None = None,
+    ) -> tuple[bytes, bytes]: ...
+    def auth_decap(
+        self, enc: bytes, skR: PrivateKeyTypeVar, pkS: PublicKeyTypeVar
+    ) -> bytes: ...
 
-    @abstractmethod
-    def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
-        """
-        Deterministic algorithm to derive a key pair from the input key material `ikm`.
 
-        :param ikm: An input key material.
-        :return: A `(private key, public key)` pair.
-        """
-        raise NotImplementedError
+class KemOperationMixin:
+    @property
+    def _suite_id(self: KemProtocol) -> bytes:
+        return concat(b"KEM", I2OSP(self.id.value, 2))
 
-    @abstractmethod
-    def serialize_public_key(self, pkX: PublicKeyTypes) -> bytes:
-        """
-        Produce a byte string of length `Npk` encoding the private key `pkX`.
-
-        :param pkX: A public key instance.
-        :return: The serialized form of public key
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
-        """
-         Parse a byte string of length `Npk` to recover a public key.
-
-        :param pkXm: A serialized form of public key.
-        :return: The public key instance.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def serialize_private_key(self, skX: PrivateKeyTypes) -> bytes:
-        """
-        Produce a byte string of length `Nsk` encoding the private key `skX`.
-
-        :param skX: A private key instance.
-        :return: The serialized form of private key.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def deserialize_private_key(self, skXm: bytes) -> PrivateKeyTypes:
-        """
-         Parse a byte string of length `Nsk` to recover a private key.
-
-        :param skXm: A serialized form of private key.
-        :return: The private key instance.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _exchange(self, sk: PrivateKeyTypes, pk: PublicKeyTypes):
-        raise NotImplementedError
-
-    def extract_and_expand(self, dh: bytes, kem_context: bytes) -> bytes:
-        """
-        Extract key from dh and expand to the `Nsecret` length.
-
-        :param dh: A shared key.
-        :param kem_context: The context, merely a concatenation of ephemeral public key and recipient public key.
-        :return: shared secret.
-        """
+    def extract_and_expand(self: KemProtocol, dh: bytes, kem_context: bytes) -> bytes:
         eae_prk = self._KDF.labeled_extract(
             salt=b"", label=b"eae_prk", ikm=dh, suite_id=self._suite_id
         )
@@ -171,28 +98,21 @@ class AbstractKEM(ABC):
         return shared_secret
 
     def encap(
-        self,
-        pkR: PublicKeyTypes,
-        skE: PrivateKeyTypes | None = None,
-        pkE: PublicKeyTypes | None = None,
+        self: KemProtocol,
+        pkR: HPKEPublicKeyTypes,
+        skE: HPKEPrivateKeyTypes | None = None,
+        pkE: HPKEPublicKeyTypes | None = None,
     ) -> tuple[bytes, bytes]:
-        """
-         Randomized algorithm to generate an ephemeral, fixed-length symmetric key (the KEM shared secret)
-         and a fixed-length encapsulation of that key that can be decapsulated by the holder of the private key
-          corresponding to pkR.
-
-        :param pkR: The public key of recipient.
-        :param skE: The ephemeral private key ( ONLY for debug purpose ).
-        :param pkE: The ephemeral public key ( ONLY for debug purpose ).
-        :return: A tuple consists of shared secret and ephemeral public key that used in recipient decryption.
-        """
-        if (not skE) and (not pkE):
+        if skE is None and pkE is None:
             skE, pkE = self.generate_key_pair()
-        else:
+        elif skE is not None and pkE is not None:
             print(
-                "WARNING: skE and pkE are overriden by input value instead of random generated"
+                "WARNING: skE and pkE are overridden by input value instead of random generated."
             )
             assert skE.public_key() == pkE
+        else:
+            raise ValueError("skE and pkE must both be provided or both be None.")
+
         dh = self._exchange(skE, pkR)
         enc = self.serialize_public_key(pkE)
 
@@ -202,15 +122,7 @@ class AbstractKEM(ABC):
         shared_secret = self.extract_and_expand(dh, kem_context)
         return shared_secret, enc
 
-    def decap(self, enc: bytes, skR: PrivateKeyTypes) -> bytes:
-        """
-        Deterministic algorithm using the private key skR to recover the ephemeral symmetric key (the KEM shared secret)
-         from its encapsulated representation enc.
-
-        :param enc: The ephemeral public key.
-        :param skR: The secret key of recipient.
-        :return: Generated shared secret.
-        """
+    def decap(self: KemProtocol, enc: bytes, skR: HPKEPrivateKeyTypes) -> bytes:
         pkE = self.deserialize_public_key(enc)
         dh = self._exchange(skR, pkE)
 
@@ -221,29 +133,25 @@ class AbstractKEM(ABC):
         return shared_secret
 
     def auth_encap(
-        self,
-        pkR: PublicKeyTypes,
-        skS: PrivateKeyTypes,
-        skE: PrivateKeyTypes | None = None,
-        pkE: PublicKeyTypes | None = None,
+        self: KemProtocol,
+        pkR: HPKEPublicKeyTypes,
+        skS: HPKEPrivateKeyTypes,
+        skE: HPKEPrivateKeyTypes | None = None,
+        pkE: HPKEPublicKeyTypes | None = None,
     ) -> tuple[bytes, bytes]:
-        """
-         Same as Encap(), and the outputs encode an assurance that the KEM shared secret was generated by
-          the holder of the private key `skS`.
+        if not self.auth:
+            raise NotImplementedError(f"AuthEncap not supported by {self.id}")
 
-        :param pkR: The public key of recipient.
-        :param skS: The secret key of sender.
-        :param skE: The ephemeral private key ( ONLY for debug purpose ).
-        :param pkE: The ephemeral public key ( ONLY for debug purpose ).
-        :return: A tuple consists of shared secret and ephemeral public key that used in recipient decryption.
-        """
-        if (not skE) and (not pkE):
+        if skE is None and pkE is None:
             skE, pkE = self.generate_key_pair()
-        else:
+        elif skE is not None and pkE is not None:
             print(
-                "WARNING: skE and pkE are overriden by input value instead of random generated"
+                "WARNING: skE and pkE are overridden by input value instead of random generated."
             )
             assert skE.public_key() == pkE
+        else:
+            raise ValueError("skE and pkE must both be provided or both be None.")
+
         dh = concat(self._exchange(skE, pkR), self._exchange(skS, pkR))
         enc = self.serialize_public_key(pkE)
 
@@ -255,17 +163,11 @@ class AbstractKEM(ABC):
         return shared_secret, enc
 
     def auth_decap(
-        self, enc: bytes, skR: PrivateKeyTypes, pkS: PublicKeyTypes
+        self: KemProtocol, enc: bytes, skR: HPKEPrivateKeyTypes, pkS: HPKEPublicKeyTypes
     ) -> bytes:
-        """
-         Same as Decap(), and the recipient is assured that the KEM shared secret was generated by the holder of
-          the private key `skS`.
+        if not self.auth:
+            raise NotImplementedError(f"AuthDecap not supported by {self.id}")
 
-        :param enc: The ephemeral public key.
-        :param skR: The secret key of recipient.
-        :param pkS: The public key of sender.
-        :return: Created shared secret.
-        """
         pkE = self.deserialize_public_key(enc)
         dh = concat(self._exchange(skR, pkE), self._exchange(skR, pkS))
 
@@ -277,42 +179,60 @@ class AbstractKEM(ABC):
         return shared_secret
 
 
-class EcAbstractKem(AbstractKEM):
+class EcKemPrimitivesProtocol(KemProtocol, Protocol):
     @property
-    @abstractmethod
-    def _curve(self) -> Type[EllipticCurve]:
-        raise NotImplementedError
-
+    def _curve(self) -> type[EllipticCurve]: ...
     @property
-    @abstractmethod
-    def _order(self) -> int:
-        raise NotImplementedError
-
+    def _order(self) -> int: ...
     @property
-    @abstractmethod
-    def _bitmask(self) -> int:
-        raise NotImplementedError
+    def _bitmask(self) -> int: ...
 
-    def _exchange(self, sk: EllipticCurvePrivateKey, pk: EllipticCurvePublicKey):
+    def _exchange(
+        self, sk: EllipticCurvePrivateKey, pk: EllipticCurvePublicKey
+    ) -> bytes: ...
+    def generate_key_pair(
+        self,
+    ) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]: ...
+    def derive_key_pair(
+        self, ikm: bytes
+    ) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]: ...
+    def serialize_public_key(self, pkX: EllipticCurvePublicKey) -> bytes: ...
+    def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey: ...
+    def serialize_private_key(self, skX: EllipticCurvePrivateKey) -> bytes: ...
+    def deserialize_private_key(self, skXm: bytes) -> EllipticCurvePrivateKey: ...
+
+
+class EcKemPrimitivesMixin:
+    def _exchange(
+        self: EcKemPrimitivesProtocol,
+        sk: EllipticCurvePrivateKey,
+        pk: EllipticCurvePublicKey,
+    ) -> bytes:
         return sk.exchange(ECDH(), pk)
 
-    def generate_key_pair(self) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
+    def generate_key_pair(
+        self: EcKemPrimitivesProtocol,
+    ) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]:
         private_key = generate_private_key(self._curve())
         public_key = private_key.public_key()
         return private_key, public_key
 
-    def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
+    def derive_key_pair(
+        self: EcKemPrimitivesProtocol, ikm: bytes
+    ) -> tuple[EllipticCurvePrivateKey, EllipticCurvePublicKey]:
         if len(ikm) < self._Nsk:
             raise ValueError("ikm doesn't have sufficient length")
         dkp_prk = self._KDF.labeled_extract(
             salt=b"", label=b"dkp_prk", ikm=ikm, suite_id=self._suite_id
         )
-        sk = 0
+        sk_val = 0
         counter = 0
-        while sk == 0 or sk >= self._order:
+        while sk_val == 0 or sk_val >= self._order:
             if counter > 255:
-                raise RuntimeError("You are too lucky to meet a good private key")
-            _bytes = bytearray(
+                raise RuntimeError(
+                    "Could not derive a valid private key after 256 attempts"
+                )
+            _bytes_val = bytearray(
                 self._KDF.labeled_expand(
                     prk=dkp_prk,
                     label=b"candidate",
@@ -321,35 +241,129 @@ class EcAbstractKem(AbstractKEM):
                     suite_id=self._suite_id,
                 )
             )
-            _bytes[0] = _bytes[0] & self._bitmask
-            sk = OS2IP(_bytes)
-            counter = counter + 1
-        sk = self.deserialize_private_key(I2OSP(sk, self._Nsk))
-        return sk, sk.public_key()
+            _bytes_val[0] = _bytes_val[0] & self._bitmask
+            sk_val = OS2IP(_bytes_val)
+            counter += 1
+        sk_obj = self.deserialize_private_key(I2OSP(sk_val, self._Nsk))
+        return sk_obj, sk_obj.public_key()
 
-    def serialize_public_key(self, pkX: EllipticCurvePublicKey) -> bytes:
+    def serialize_public_key(
+        self: EcKemPrimitivesProtocol, pkX: EllipticCurvePublicKey
+    ) -> bytes:
         return pkX.public_bytes(
             encoding=Encoding.X962, format=PublicFormat.UncompressedPoint
         )
 
-    def deserialize_public_key(self, pkXm: bytes) -> EllipticCurvePublicKey:
+    def deserialize_public_key(
+        self: EcKemPrimitivesProtocol, pkXm: bytes
+    ) -> EllipticCurvePublicKey:
         if len(pkXm) != self._Npk:
-            raise ValueError("Mismatched public key length")
-
+            raise ValueError(
+                f"Mismatched public key length. Expected {self._Npk}, got {len(pkXm)}"
+            )
         return EllipticCurvePublicKey.from_encoded_point(curve=self._curve(), data=pkXm)
 
-    def serialize_private_key(self, skX: EllipticCurvePrivateKey) -> bytes:
+    def serialize_private_key(
+        self: EcKemPrimitivesProtocol, skX: EllipticCurvePrivateKey
+    ) -> bytes:
         return I2OSP(skX.private_numbers().private_value, self._Nsk)
 
-    def deserialize_private_key(self, skXm: bytes) -> EllipticCurvePrivateKey:
+    def deserialize_private_key(
+        self: EcKemPrimitivesProtocol, skXm: bytes
+    ) -> EllipticCurvePrivateKey:
         if OS2IP(skXm) % self._order == 0:
-            raise ValueError("the private key to be deserialized is insecure")
+            raise ValueError(
+                "The private key to be deserialized is insecure (value is 0 or multiple of order)"
+            )
         return derive_private_key(OS2IP(skXm), self._curve())
 
 
-class DhKemP256HkdfSha256(EcAbstractKem):
+class XEcKemPrimitivesProtocol(KemProtocol, Protocol):
     @property
-    def _curve(self) -> Type[EllipticCurve]:
+    def _curve_cls(
+        self,
+    ) -> type[HPKEXCurvePrivateKey]: ...
+
+    def _exchange(self, sk: HPKEXCurvePrivateKey, pk: HPKEXCurvePublicKey) -> bytes: ...
+    def generate_key_pair(self) -> tuple[HPKEXCurvePrivateKey, HPKEXCurvePublicKey]: ...
+    def derive_key_pair(
+        self, ikm: bytes
+    ) -> tuple[HPKEXCurvePrivateKey, HPKEXCurvePublicKey]: ...
+    def serialize_public_key(self, pkX: HPKEXCurvePublicKey) -> bytes: ...
+    def deserialize_public_key(self, pkXm: bytes) -> HPKEXCurvePublicKey: ...
+    def serialize_private_key(self, skX: HPKEXCurvePrivateKey) -> bytes: ...
+    def deserialize_private_key(self, skXm: bytes) -> HPKEXCurvePrivateKey: ...
+
+
+class XEcKemPrimitivesMixin:
+    def _exchange(
+        self: XEcKemPrimitivesProtocol,
+        sk: HPKEXCurvePrivateKey,
+        pk: HPKEXCurvePublicKey,
+    ) -> bytes:
+        if isinstance(sk, X25519PrivateKey) and isinstance(pk, X25519PublicKey):
+            return sk.exchange(pk)
+        elif isinstance(sk, X448PrivateKey) and isinstance(pk, X448PublicKey):
+            return sk.exchange(pk)
+        else:
+            raise ValueError("Mismatched key type.")
+
+    def generate_key_pair(
+        self: XEcKemPrimitivesProtocol,
+    ) -> tuple[HPKEXCurvePrivateKey, HPKEXCurvePublicKey]:
+        private_key = self._curve_cls.generate()
+        public_key = private_key.public_key()
+        return private_key, public_key
+
+    def derive_key_pair(
+        self: XEcKemPrimitivesProtocol, ikm: bytes
+    ) -> tuple[HPKEXCurvePrivateKey, HPKEXCurvePublicKey]:
+        if len(ikm) < self._Nsk:
+            raise ValueError("ikm doesn't have sufficient length")
+        dkp_prk = self._KDF.labeled_extract(
+            salt=b"", label=b"dkp_prk", ikm=ikm, suite_id=self._suite_id
+        )
+        sk_bytes = self._KDF.labeled_expand(
+            prk=dkp_prk, label=b"sk", info=b"", L=self._Nsk, suite_id=self._suite_id
+        )
+        sk_obj = self.deserialize_private_key(sk_bytes)
+        return sk_obj, sk_obj.public_key()
+
+    def serialize_public_key(
+        self: XEcKemPrimitivesProtocol, pkX: HPKEXCurvePublicKey
+    ) -> bytes:
+        return pkX.public_bytes_raw()
+
+    def deserialize_public_key(
+        self: XEcKemPrimitivesProtocol, pkXm: bytes
+    ) -> HPKEXCurvePublicKey:
+        if len(pkXm) != self._Npk:
+            raise ValueError(
+                f"Mismatched public key length. Expected {self._Npk}, got {len(pkXm)}"
+            )
+
+        if self._curve_cls is X25519PrivateKey:
+            public_curve_cls: type[HPKEXCurvePublicKey] = X25519PublicKey
+        elif self._curve_cls is X448PrivateKey:
+            public_curve_cls = X448PublicKey
+        else:
+            raise TypeError(f"Unsupported X-curve private key class: {self._curve_cls}")
+        return public_curve_cls.from_public_bytes(pkXm)
+
+    def serialize_private_key(
+        self: XEcKemPrimitivesProtocol, skX: HPKEXCurvePrivateKey
+    ) -> bytes:
+        return skX.private_bytes_raw()
+
+    def deserialize_private_key(
+        self: XEcKemPrimitivesProtocol, skXm: bytes
+    ) -> HPKEXCurvePrivateKey:
+        return self._curve_cls.from_private_bytes(skXm)
+
+
+class DhKemP256HkdfSha256(KemOperationMixin, EcKemPrimitivesMixin):
+    @property
+    def _curve(self) -> type[EllipticCurve]:
         return SECP256R1
 
     @property
@@ -365,7 +379,7 @@ class DhKemP256HkdfSha256(EcAbstractKem):
         return KemIds.DHKEM_P_256_HKDF_SHA256
 
     @property
-    def _KDF(self) -> HkdfSHA256:
+    def _KDF(self) -> KdfProtocol:
         return HkdfSHA256()
 
     @property
@@ -385,9 +399,9 @@ class DhKemP256HkdfSha256(EcAbstractKem):
         return True
 
 
-class DhKemP384HkdfSha384(EcAbstractKem):
+class DhKemP384HkdfSha384(KemOperationMixin, EcKemPrimitivesMixin):
     @property
-    def _curve(self) -> Type[EllipticCurve]:
+    def _curve(self) -> type[EllipticCurve]:
         return SECP384R1
 
     @property
@@ -403,7 +417,7 @@ class DhKemP384HkdfSha384(EcAbstractKem):
         return KemIds.DHKEM_P_384_HKDF_SHA384
 
     @property
-    def _KDF(self) -> HkdfSHA384:
+    def _KDF(self) -> KdfProtocol:
         return HkdfSHA384()
 
     @property
@@ -423,9 +437,9 @@ class DhKemP384HkdfSha384(EcAbstractKem):
         return True
 
 
-class DhKemP521HkdfSha512(EcAbstractKem):
+class DhKemP521HkdfSha512(KemOperationMixin, EcKemPrimitivesMixin):
     @property
-    def _curve(self) -> Type[EllipticCurve]:
+    def _curve(self) -> type[EllipticCurve]:
         return SECP521R1
 
     @property
@@ -441,7 +455,7 @@ class DhKemP521HkdfSha512(EcAbstractKem):
         return KemIds.DHKEM_P_521_HKDF_SHA512
 
     @property
-    def _KDF(self) -> HkdfSHA512:
+    def _KDF(self) -> KdfProtocol:
         return HkdfSHA512()
 
     @property
@@ -461,9 +475,9 @@ class DhKemP521HkdfSha512(EcAbstractKem):
         return True
 
 
-class DhKemSECP256K1HkdfSha256(EcAbstractKem):
+class DhKemSECP256K1HkdfSha256(KemOperationMixin, EcKemPrimitivesMixin):
     @property
-    def _curve(self) -> Type[EllipticCurve]:
+    def _curve(self) -> type[EllipticCurve]:
         return SECP256K1
 
     @property
@@ -479,7 +493,7 @@ class DhKemSECP256K1HkdfSha256(EcAbstractKem):
         return KemIds.DHKEM_SECP256K1_HKDF_SHA256
 
     @property
-    def _KDF(self) -> HkdfSHA256:
+    def _KDF(self) -> KdfProtocol:
         return HkdfSHA256()
 
     @property
@@ -499,60 +513,9 @@ class DhKemSECP256K1HkdfSha256(EcAbstractKem):
         return True
 
 
-class XEcAbstractKem(AbstractKEM):
+class DhKemX25519HkdfSha256(KemOperationMixin, XEcKemPrimitivesMixin):
     @property
-    @abstractmethod
-    def _curve(self) -> X448PrivateKey | X25519PrivateKey:
-        raise NotImplementedError
-
-    def _exchange(
-        self, sk: X25519PrivateKey | X448PrivateKey, pk: X25519PublicKey | X448PublicKey
-    ):
-        return sk.exchange(pk)
-
-    def generate_key_pair(self) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
-        private_key = self._curve.generate()
-        public_key = private_key.public_key()
-        return private_key, public_key
-
-    def derive_key_pair(self, ikm: bytes) -> tuple[PrivateKeyTypes, PublicKeyTypes]:
-        if len(ikm) < self._Nsk:
-            raise ValueError("ikm doesn't have sufficient length")
-        dkp_prk = self._KDF.labeled_extract(
-            salt=b"", label=b"dkp_prk", ikm=ikm, suite_id=self._suite_id
-        )
-        sk = self._KDF.labeled_expand(
-            prk=dkp_prk, label=b"sk", info=b"", L=self._Nsk, suite_id=self._suite_id
-        )
-        sk = self._curve.from_private_bytes(sk)
-        return sk, sk.public_key()
-
-    def serialize_public_key(self, pkX: X448PublicKey | X25519PublicKey) -> bytes:
-        return pkX.public_bytes_raw()
-
-    def deserialize_public_key(self, pkXm: bytes) -> PublicKeyTypes:
-        if len(pkXm) != self._Npk:
-            raise ValueError("Mismatched public key length")
-
-        if self._curve is X25519PrivateKey:
-            public_curve = X25519PublicKey
-        elif self._curve is X448PrivateKey:
-            public_curve = X448PublicKey
-        else:
-            raise NotImplementedError("Curve not implemented")
-
-        return public_curve.from_public_bytes(pkXm)
-
-    def serialize_private_key(self, skX: X25519PrivateKey | X448PrivateKey) -> bytes:
-        return skX.private_bytes_raw()
-
-    def deserialize_private_key(self, skXm: bytes) -> PrivateKeyTypes:
-        return self._curve.from_private_bytes(skXm)
-
-
-class DhKemX25519HkdfSha256(XEcAbstractKem):
-    @property
-    def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
+    def _curve_cls(self) -> type[HPKEXCurvePrivateKey]:
         return X25519PrivateKey
 
     @property
@@ -560,7 +523,7 @@ class DhKemX25519HkdfSha256(XEcAbstractKem):
         return KemIds.DHKEM_X25519_HKDF_SHA256
 
     @property
-    def _KDF(self) -> HkdfSHA256:
+    def _KDF(self) -> KdfProtocol:
         return HkdfSHA256()
 
     @property
@@ -580,9 +543,9 @@ class DhKemX25519HkdfSha256(XEcAbstractKem):
         return True
 
 
-class DhKemX448HkdfSha512(XEcAbstractKem):
+class DhKemX448HkdfSha512(KemOperationMixin, XEcKemPrimitivesMixin):
     @property
-    def _curve(self) -> Type[X25519PrivateKey | X448PrivateKey]:
+    def _curve_cls(self) -> type[HPKEXCurvePrivateKey]:
         return X448PrivateKey
 
     @property
@@ -590,7 +553,7 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
         return KemIds.DHKEM_X448_HKDF_SHA512
 
     @property
-    def _KDF(self) -> HkdfSHA512:
+    def _KDF(self) -> KdfProtocol:
         return HkdfSHA512()
 
     @property
@@ -611,27 +574,8 @@ class DhKemX448HkdfSha512(XEcAbstractKem):
 
 
 class KemFactory:
-    """
-    KEM factory class
-    """
-
     @classmethod
-    def new(
-        cls, kem_id: KemIds
-    ) -> (
-        DhKemP256HkdfSha256
-        | DhKemP384HkdfSha384
-        | DhKemP521HkdfSha512
-        | DhKemSECP256K1HkdfSha256
-        | DhKemX25519HkdfSha256
-        | DhKemX448HkdfSha512
-    ):
-        """
-        Create an instance of corresponding KEM.
-
-        :param kem_id: KEM id.
-        :return: An instance of KEM.
-        """
+    def new(cls, kem_id: KemIds) -> KemProtocol:
         match kem_id:
             case KemIds.DHKEM_P_256_HKDF_SHA256:
                 return DhKemP256HkdfSha256()
@@ -646,4 +590,6 @@ class KemFactory:
             case KemIds.DHKEM_X448_HKDF_SHA512:
                 return DhKemX448HkdfSha512()
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    f"KEM ID {kem_id} not implemented in factory."
+                )
