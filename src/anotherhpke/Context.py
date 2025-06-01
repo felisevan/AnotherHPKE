@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from .constants import AeadIds, ModeIds, RoleIds
 from .utilities import I2OSP, concat, xor_bytes
+
+if TYPE_CHECKING:
+    from .Ciphersuite import Ciphersuite
 
 
 class BaseContext:
@@ -9,7 +14,7 @@ class BaseContext:
 
     def __init__(
         self,
-        ciphersuite,
+        ciphersuite: Ciphersuite,
         key: bytes | None,
         base_nonce: bytes | None,
         exporter_secret: bytes,
@@ -43,6 +48,8 @@ class BaseContext:
         :param pt: plaintext value
         :return: ciphertext
         """
+        if not self._key:
+            raise ValueError("Key is None, maybe in Export mode")
         cipher = self.ciphersuite.aead.seal(self._key, self._compute_nonce(), aad, pt)
         self._seq += 1
         return cipher
@@ -54,6 +61,8 @@ class BaseContext:
         :param ct: ciphertext value
         :return: plaintext
         """
+        if not self._key:
+            raise ValueError("Key is None, maybe in Export mode")
         cipher = self.ciphersuite.aead.open(self._key, self._compute_nonce(), aad, ct)
         self._seq += 1
         return cipher
@@ -79,7 +88,7 @@ class BaseContext:
         :return: next nonce
         """
         if not self._base_nonce:
-            raise ValueError("Missing base nonce")
+            raise ValueError("Base nonce is None, maybe in Export mode")
         ret = xor_bytes(self._base_nonce, I2OSP(self._seq, self.ciphersuite.aead.Nn))
         return ret
 
@@ -115,7 +124,7 @@ class ContextRecipient(BaseContext):
 
 
 class ContextFactory:
-    def __init__(self, ciphersuite, role_id: RoleIds):
+    def __init__(self, ciphersuite: Ciphersuite, role_id: RoleIds):
         self._default_psk = b""
         self._default_psk_id = b""
         self.ciphersuite = ciphersuite
