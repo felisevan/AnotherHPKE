@@ -2,30 +2,31 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 from cryptography.hazmat.primitives.asymmetric.ec import (
-    generate_private_key,
-    derive_private_key,
+    ECDH,
+    SECP256K1,
     SECP256R1,
     SECP384R1,
     SECP521R1,
-    EllipticCurvePublicKey,
     EllipticCurve,
-    ECDH,
-    EllipticCurvePrivateKey, SECP256K1,
+    EllipticCurvePrivateKey,
+    EllipticCurvePublicKey,
+    derive_private_key,
+    generate_private_key,
 )
 from cryptography.hazmat.primitives.asymmetric.types import (
     PrivateKeyTypes,
     PublicKeyTypes,
 )
+from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import (
     X25519PrivateKey,
     X25519PublicKey,
 )
-from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from .KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
 from .constants import KemIds
-from .utilities import concat, I2OSP, OS2IP
+from .KDF import AbstractHkdf, HkdfSHA256, HkdfSHA384, HkdfSHA512
+from .utilities import I2OSP, OS2IP, concat
 
 
 class AbstractKEM(ABC):
@@ -467,7 +468,7 @@ class DhKemSECP256K1HkdfSha256(EcAbstractKem):
 
     @property
     def _order(self) -> int:
-        return 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+        return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
 
     @property
     def _bitmask(self) -> int:

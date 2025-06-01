@@ -1,5 +1,5 @@
-from .constants import ModeIds, RoleIds, AeadIds
-from .utilities import concat, I2OSP, xor_bytes
+from .constants import AeadIds, ModeIds, RoleIds
+from .utilities import I2OSP, concat, xor_bytes
 
 
 class BaseContext:
