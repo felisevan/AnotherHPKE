@@ -78,6 +78,8 @@ class BaseContext:
         compute next nonce
         :return: next nonce
         """
+        if not self._base_nonce:
+            raise ValueError("Missing base nonce")
         ret = xor_bytes(self._base_nonce, I2OSP(self._seq, self.ciphersuite.aead.Nn))
         return ret
 
